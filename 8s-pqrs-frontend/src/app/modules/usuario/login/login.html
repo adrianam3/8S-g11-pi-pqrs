@@ -1,0 +1,60 @@
+<div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-screen overflow-hidden">
+    <div class="flex flex-col items-center justify-center">
+      <div style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)">
+        <div class="w-full bg-surface-0 dark:bg-surface-900 py-20 px-8 sm:px-20" style="border-radius: 53px; max-width: 500px">
+
+          <!-- Logo y Título -->
+          <div class="text-center mb-8">
+            <img src="assets/images/logo.png" alt="Logo" class="mb-8 w-16 mx-auto block" />
+            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Bienvenido al Sistema</div>
+            <span class="text-muted-color font-medium">Por favor, inicie sesión para continuar</span>
+          </div>
+
+          <!-- Formulario -->
+          <div>
+            <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
+            <input id="email" type="email" [(ngModel)]="email" pInputText placeholder="Ingrese su correo electrónico"
+                   class="w-full md:w-120 mb-4 p-3 border-round-lg border-1 border-gray-300" />
+
+            <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Contraseña</label>
+            <p-password id="password" [(ngModel)]="password" placeholder="Ingrese su contraseña"
+                        [toggleMask]="true" [feedback]="false"
+                        inputStyleClass="w-full p-3" style="border-radius: 10px; border: 1px solid #ccc" class="mb-4">
+            </p-password>
+
+            <!-- Olvidó su contraseña -->
+            <div class="flex items-center justify-between mt-2 mb-6 gap-8 text-sm">
+              <div></div>
+              <span (click)="displayRecovery = true" class="font-medium no-underline text-right cursor-pointer text-primary">¿Olvidó su contraseña?</span>
+            </div>
+
+            <!-- Botón de Login -->
+            <p-button icon="pi pi-sign-in" label="Iniciar Sesión" (click)="loginNuevo()"
+                      styleClass="w-full p-button-lg" [disabled]="loading"></p-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diálogo recuperación -->
+  <p-dialog header="Recuperar Contraseña" [(visible)]="displayRecovery" [modal]="true" [closable]="true" [style]="{ width: '400px' }">
+    <div class="field">
+      <label for="recoveryEmail" class="block text-900 text-lg font-medium mb-2">Email</label>
+      <input id="recoveryEmail" type="email" [(ngModel)]="recoveryEmail" placeholder="Ingrese su email" pInputText
+             class="w-full" style="padding: 1rem; border-radius: 10px; border: 1px solid #ccc" />
+    </div>
+
+    <div class="mt-4">
+      <p-button icon="pi pi-envelope" label="Enviar Solicitud" (click)="sendRecoveryEmail()"
+                styleClass="w-full p-button-lg" [disabled]="loading"></p-button>
+    </div>
+  </p-dialog>
+
+  <!-- Toast de notificación -->
+  <p-toast></p-toast>
+
+  <!-- Spinner de carga -->
+  <div class="card flex justify-center" *ngIf="loading">
+    <p-progress-spinner ariaLabel="loading" />
+  </div>

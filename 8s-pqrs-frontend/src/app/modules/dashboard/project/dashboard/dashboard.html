@@ -1,0 +1,167 @@
+<!-- <p-toolbar class="mb-3">
+  <div class="p-toolbar-group-left gap-2 flex align-items-center">
+    <span class="mr-2">Rango:</span>
+    <p-calendar [(ngModel)]="range" selectionMode="range" dateFormat="yy-mm-dd" [showIcon]="true"></p-calendar>
+
+    <span class="ml-3 mr-2">Periodo:</span>
+    <p-dropdown [options]="periodos" [(ngModel)]="period" optionLabel="label" optionValue="value" (onChange)="onPeriodoChange()"></p-dropdown>
+
+    <span class="ml-3 mr-2">Segmento:</span>
+    <p-dropdown [options]="segmentos" [(ngModel)]="segment" optionLabel="label" optionValue="value" (onChange)="onSegmentChange()"></p-dropdown>
+
+    <button pButton label="Actualizar" icon="pi pi-refresh" class="ml-3" (click)="refresh()"></button>
+  </div>
+</p-toolbar> -->
+
+<p-toolbar class="mb-3">
+  <div class="p-toolbar-group-left gap-2 flex align-items-center">
+    <span class="mr-2">Rango:</span>
+    <p-date-picker [(ngModel)]="range" selectionMode="range" dateFormat="yy-mm-dd" [showIcon]="true">
+    </p-date-picker>
+
+    <span class="ml-3 mr-2">Periodo:</span>
+    <p-select [options]="periodos" [(ngModel)]="period" optionLabel="label" optionValue="value"
+      (onChange)="onPeriodoChange()">
+    </p-select>
+
+    <span class="ml-3 mr-2">Segmento:</span>
+    <p-select [options]="segmentos" [(ngModel)]="segment" optionLabel="label" optionValue="value"
+      (onChange)="onSegmentChange()">
+    </p-select>
+
+    <button pButton label="Actualizar" icon="pi pi-refresh" class="ml-3" (click)="refresh()">
+    </button>
+  </div>
+</p-toolbar>
+
+
+<div class="grid">
+
+  <!-- KPIs -->
+  <div class="col-12 md:col-3">
+    <p-card header="CSAT (%)">
+      <div class="kpi">{{ kpis?.csat ?? 0 }}%</div>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-3">
+    <p-card header="NPS">
+      <div class="kpi">{{ kpis?.nps ?? 0 }}</div>
+      <div class="muted">
+        P {{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}% ·
+        Pa {{ kpis?.nps_breakdown?.pasivos_pct ?? 0 }}% ·
+        D {{ kpis?.nps_breakdown?.detractores_pct ?? 0 }}%
+      </div>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-3">
+    <p-card header="CES (1–5)">
+      <div class="kpi">{{ kpis?.ces ?? 0 }}</div>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-3">
+    <p-card header="Satisfacción (1–10)">
+      <div class="kpi">{{ overview?.satisfaccion_avg_10?.value ?? 0 }}</div>
+      <p-progressBar *ngIf="overview?.satisfaccion_avg_10"
+        [value]="(overview?.satisfaccion_avg_10.value||0)*10"></p-progressBar>
+      <div class="muted" *ngIf="overview?.satisfaccion_avg_10?.delta_abs_vs_prev !== null">
+        Δ {{ overview?.satisfaccion_avg_10?.delta_abs_vs_prev > 0 ? '+' : ''}}{{
+        overview?.satisfaccion_avg_10?.delta_abs_vs_prev }}
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Cards resumen -->
+  <div class="col-12 md:col-4">
+    <p-card header="Total PQRs">
+      <div class="kpi">{{ overview?.total_pqrs?.value ?? 0 }}</div>
+      <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-4">
+    <p-card header="PQRs abiertas">
+      <div class="kpi">{{ overview?.pqrs_abiertas?.value ?? 0 }}</div>
+      <div class="muted">Δ {{ overview?.pqrs_abiertas?.delta_pct_vs_prev ?? 0 }}%</div>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-4">
+    <p-card header="Encuestas enviadas">
+      <div class="kpi">{{ overview?.encuestas_enviadas?.value ?? 0 }}</div>
+      <div class="muted">Δ {{ overview?.encuestas_enviadas?.delta_pct_vs_prev ?? 0 }}%</div>
+    </p-card>
+  </div>
+
+  <!-- Línea -->
+  <div class="col-12">
+    <p-card header="Tendencia: Satisfacción (1–5) y PQRs">
+      <p-chart type="line" [data]="lineData" [options]="lineOptions" *ngIf="lineData"></p-chart>
+    </p-card>
+  </div>
+
+  <!-- Segmentos (barras horizontales) -->
+  <div class="col-12 md:col-4">
+    <p-card header="CSAT por {{ segment }}">
+      <p-chart type="bar" [data]="csatSegBar" [options]="segBarOptions" *ngIf="csatSegBar"></p-chart>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-4">
+    <p-card header="NPS por {{ segment }}">
+      <p-chart type="bar" [data]="npsSegBar" [options]="segBarOptions" *ngIf="npsSegBar"></p-chart>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-4">
+    <p-card header="CES por {{ segment }}">
+      <p-chart type="bar" [data]="cesSegBar" [options]="segBarOptions" *ngIf="cesSegBar"></p-chart>
+    </p-card>
+  </div>
+
+  <!-- Donut + Estado -->
+  <div class="col-12 md:col-6">
+    <p-card header="Distribución de calificaciones (1–5)">
+      <p-chart type="doughnut" [data]="donutData" [options]="donutOptions" *ngIf="donutData"></p-chart>
+    </p-card>
+  </div>
+  <div class="col-12 md:col-6">
+    <p-card header="PQRs por estado">
+      <p-chart type="bar" [data]="pqrsEstadoData" [options]="{ responsive:true }" *ngIf="pqrsEstadoData"></p-chart>
+    </p-card>
+  </div>
+
+  <!-- Tablas -->
+  <div class="col-12 md:col-6">
+    <p-card header="PQRs por categoría">
+      <p-table [value]="pqrsCat" [paginator]="true" [rows]="5" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Categoría</th>
+            <th style="width:120px">Total</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-r>
+          <tr>
+            <td>{{ r.categoria }}</td>
+            <td class="text-right">{{ r.total }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+
+  <div class="col-12 md:col-6">
+    <p-card header="PQRs por categoría padre">
+      <p-table [value]="pqrsCatPadre" [paginator]="true" [rows]="5" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Categoría padre</th>
+            <th style="width:120px">Total</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-r>
+          <tr>
+            <td>{{ r.categoria_padre }}</td>
+            <td class="text-right">{{ r.total }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>

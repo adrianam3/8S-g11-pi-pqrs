@@ -1,0 +1,34 @@
+<div class="card card-w-title">
+    <h2>Encuestas Programadas</h2>
+    <p class="subtitle">Sistema de envío de encuestas post-atención</p>
+
+    <ng-container *ngFor="let encuesta of encuestas">
+      <div class="encuesta-card">
+        <div class="header">
+          <strong>{{ encuesta.nombreCompletoCliente }}</strong>
+
+          <span class="badge" [ngClass]="{
+            'enviada': encuesta.estadoEnvio === 'ENVIADA',
+            'pendiente': encuesta.estadoEnvio === 'PENDIENTE',
+            'nocontestada': encuesta.estadoEnvio === 'NO CONTESTADA'
+          }">
+            <i class="pi pi-envelope"></i> {{ encuesta.estadoEnvio }}
+          </span>
+
+          <span class="intentos">{{ encuesta.intentosEnviados }}/{{ encuesta.maxIntentos }} intentos</span>
+
+          <button pButton icon="pi pi-send" class="send-btn" [disabled]="encuesta.estadoEnvio === 'NO CONTESTADA'"></button>
+        </div>
+
+        <div class="body">
+          <div><strong>Atención:</strong> {{ encuesta.asuntoCache }}</div>
+          <div><strong>Email:</strong> {{ encuesta.email || 'Sin email disponible' }}</div>
+          <div><strong>Fecha Atención:</strong> {{ encuesta.fechaAtencion | date:'yyyy-MM-dd' }}</div>
+          <div><strong>Programada:</strong> {{ encuesta.fechaProgramadaInicial | date:'yyyy-MM-dd HH:mm' }}</div>
+          <div class="proximo-envio" *ngIf="encuesta.proximoEnvio">
+            <strong style="color: goldenrod;">Próximo envío:</strong> {{ encuesta.proximoEnvio | date:'yyyy-MM-dd HH:mm' }}
+          </div>
+        </div>
+      </div>
+    </ng-container>
+</div>

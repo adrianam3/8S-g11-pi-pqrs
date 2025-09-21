@@ -1,0 +1,83 @@
+<div class="card card-w-title" style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center;">
+        <i class="pi pi-folder-open"></i>
+        <span style="font-size: 15px; margin-left: 5px;"><b>CANALES</b></span>
+    </div>
+</div>
+
+<div class="card card-w-title">
+    <p-table #dt [value]="canalesAll" [paginator]="true" [rows]="10" [showCurrentPageReport]="true"
+        currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros."
+        [globalFilterFields]="['nombre', 'estado', 'fechaCreacion', 'fechaActualizacion']" [rowHover]="true"
+        [showGridlines]="true" [loading]="loading" [tableStyle]="{ 'min-width': '60rem' }">
+        <ng-template #caption>
+            <div class="flex justify-content-between flex-column sm:flex-row">
+                <button pButton label="Borrar Filtros" class="p-button-outlined mb-2" icon="pi pi-filter-slash"
+                    (click)="clearFilters(dt)"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar canal..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th>ID Canal</th>
+                <th>
+                    <div class="flex justify-between items-center">
+                        Nombre
+                        <p-columnFilter type="text" field="nombre" display="menu" placeholder="Buscar por nombre" />
+                    </div>
+                </th>
+                <th>
+                    <div class="flex justify-between items-center">
+                        Estado
+                        <p-columnFilter type="text" field="estado" display="menu" placeholder="Activo/Inactivo" />
+                    </div>
+                </th>
+                <th>
+                    <div class="flex justify-between items-center">
+                        Fecha Creación
+                        <p-columnFilter type="date" field="fechaCreacion" display="menu" placeholder="mm/dd/yyyy" />
+                    </div>
+                </th>
+                <th>
+                    <div class="flex justify-between items-center">
+                        Fecha Modificación
+                        <p-columnFilter type="date" field="fechaActualizacion" display="menu"
+                            placeholder="mm/dd/yyyy" />
+                    </div>
+                </th>
+                <th>Acciones</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-rowData>
+            <tr>
+                <td>{{ rowData.idCanal }}</td>
+                <td>{{ rowData.nombre }}</td>
+                <td>
+                    <span [ngClass]="{
+          'text-green-500': rowData.estado == 1,
+          'text-red-500': rowData.estado == 0
+        }">
+                        {{ rowData.estado == 1 ? 'Activo' : 'Inactivo' }}
+                    </span>
+                </td>
+                <td>{{ rowData.fechaCreacion }}</td>
+                <td>{{ rowData.fechaActualizacion }}</td>
+                <td>
+                    <button pButton type="button" icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
+                        severity="success" (click)="editarCanal(rowData)" pTooltip="Editar Canal"></button>
+
+                    <button pButton icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                        (click)="confirmarEliminar(rowData)" pTooltip="Eliminar Canal"></button>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+</div>

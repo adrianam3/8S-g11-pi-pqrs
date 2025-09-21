@@ -1,0 +1,270 @@
+<?php
+//TODO: Clase de Usuario
+require_once('../config/config.php');
+require_once('../models/persona.model.php');
+class Usuario
+{
+    
+    //TODO: Implementar los métodos de la clase
+
+    // Método para verificar las credenciales del usuario
+    public function login($email, $password)
+    {
+        $con = new ClaseConectar();
+        $con = $con->ProcedimientoParaConectar();
+
+        // Usamos sentencia preparada para evitar inyecciones SQL
+        $query = "SELECT u.*, p.* 
+                FROM usuario u
+                LEFT JOIN persona p ON u.idPersona = p.idPersona
+                WHERE p.email = ? LIMIT 1";
+
+        $stmt = mysqli_prepare($con, $query);
+
+        if (!$stmt) {
+            error_log("Error preparando la consulta: " . mysqli_error($con));
+            return false;
+        }
+
+        // Asociar parámetros y ejecutar
+        mysqli_stmt_bind_param($stmt, 's', $email);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        // Verificar si se encontró usuario
+        if ($row = mysqli_fetch_assoc($result)) {
+            // Verificar contraseña cifrada
+            if (password_verify($password, $row['password'])) {
+                mysqli_stmt_close($stmt);
+                $con->close();
+                unset($row['password']); // Opcional: eliminar el hash por seguridad
+                return $row;
+            }
+        }
+
+        mysqli_stmt_close($stmt);
+        $con->close();
+        return false; // Fallo de login
+    }
+    
+    // public function todos() // Select * from usuario
+    public function todos()
+    {
+        try {
+            $con = new ClaseConectar();
+            $con = $con->ProcedimientoParaConectar();
+    
+            $cadena = "SELECT usuario.*, 
+                              persona.nombres AS personaNombres, 
+                              persona.apellidos AS personaApellidos, 
+                              CONCAT(persona.nombres, ' ', persona.apellidos) AS agenteNombreCompleto,
+                              persona.email AS personaEmail, 
+                              rol.nombreRol AS rolNombre,
+                              areaUsuario.nombre AS areaNombre
+                       FROM usuario
+                       LEFT JOIN persona ON usuario.idPersona = persona.idPersona
+                       LEFT JOIN rol ON usuario.idRol = rol.idRol
+                       LEFT JOIN areaUsuario ON usuario.idAreaU = areaUsuario.idAreaU";
+    
+            // Preparar la consulta
+            $stmt = mysqli_prepare($con, $cadena);
+            if (!$stmt) {
+                throw new Exception("Error al preparar la consulta: " . mysqli_error($con));
+            }
+            // Ejecutar la consulta
+            mysqli_stmt_execute($stmt);
+            // Obtener resultados
+            $result = mysqli_stmt_get_result($stmt);
+    
+            $usuarios = [];
+            while ($row = mysqli_fetch_assoc($result)) {
+                $usuarios[] = $row;
+            }
+    
+            mysqli_stmt_close($stmt);
+            $con->close();
+    
+            return $usuarios;
+    
+        } catch (Exception $e) {
+            error_log("Error en todos(): " . $e->getMessage());
+            http_response_code(500);
+            return [];
+        }
+    }
+    
+
+    public function uno($idUsuario)
+    {
+        try {
+            $con = new ClaseConectar();
+            $con = $con->ProcedimientoParaConectar();
+
+            $cadena = "SELECT usuario.*, 
+                            persona.nombres AS personaNombres, 
+                            persona.apellidos AS personaApellidos, 
+                            persona.email AS personaEmail, 
+                            rol.nombreRol AS rolNombre,
+                            areaUsuario.nombre AS areaNombre
+                    FROM usuario
+                    LEFT JOIN persona ON usuario.idPersona = persona.idPersona
+                    LEFT JOIN rol ON usuario.idRol = rol.idRol
+                    LEFT JOIN areaUsuario ON usuario.idAreaU = areaUsuario.idAreaU
+                    WHERE usuario.idUsuario = ?";
+
+            $stmt = mysqli_prepare($con, $cadena);
+            if (!$stmt) {
+                throw new Exception("Error al preparar consulta: " . mysqli_error($con));
+            }
+
+            mysqli_stmt_bind_param($stmt, 'i', $idUsuario);
+            mysqli_stmt_execute($stmt);
+            // Obtener resultados
+            $result = mysqli_stmt_get_result($stmt);
+            $usuario = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+            $con->close();
+
+            return $usuario ?: null;
+
+        } catch (Exception $e) {
+            error_log("Error en uno(): " . $e->getMessage());
+            http_response_code(500);
+            return null;
+        }
+    }
+
+    public function insertar($usuario, $password, $descripcion, $idPersona, $idAreaU, $idRol, $idCargoU, $estado)
+    {
+        try {
+            $con = new ClaseConectar();
+            $con = $con->ProcedimientoParaConectar();
+
+            $passwordHash = password_hash($password, PASSWORD_BCRYPT); // Encriptar contraseña
+
+            $sql = "INSERT INTO usuario 
+                    (usuario, password, descripcion, idPersona, idAreaU, idRol, idCargoU, estado) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+            $stmt = mysqli_prepare($con, $sql);
+            if (!$stmt) {
+                throw new Exception("Error preparando consulta: " . mysqli_error($con));
+            }
+
+            mysqli_stmt_bind_param($stmt, "ssssiiis", $usuario, $passwordHash, $descripcion, $idPersona, $idAreaU, $idRol, $idCargoU, $estado);
+            mysqli_stmt_execute($stmt);
+
+            $idInsertado = mysqli_stmt_insert_id($stmt);
+            mysqli_stmt_close($stmt);
+            $con->close();
+
+            return $idInsertado;
+
+        } catch (Exception $e) {
+            error_log("Error en insertar usuario: " . $e->getMessage());
+            http_response_code(500);
+            return false;
+        }
+    }
+
+    public function actualizar($idUsuario, $usuario, $descripcion, $idPersona, $idAreaU, $idRol, $idCargoU, $estado)
+    {
+        try {
+            $con = new ClaseConectar();
+            $con = $con->ProcedimientoParaConectar();
+
+            $sql = "UPDATE usuario SET 
+                        usuario = ?, 
+                        descripcion = ?, 
+                        idPersona = ?, 
+                        idAreaU = ?, 
+                        idRol = ?, 
+                        idCargoU = ?, 
+                        estado = ?, 
+                        fechaModificacion = CURRENT_TIMESTAMP 
+                    WHERE idUsuario = ?";
+
+            $stmt = mysqli_prepare($con, $sql);
+            if (!$stmt) {
+                throw new Exception("Error preparando consulta: " . mysqli_error($con));
+            }
+
+            mysqli_stmt_bind_param($stmt, "ssiiiiii", $usuario, $descripcion, $idPersona, $idAreaU, $idRol, $idCargoU, $estado, $idUsuario);
+            mysqli_stmt_execute($stmt);
+
+            mysqli_stmt_close($stmt);
+            $con->close();
+
+            return $idUsuario;
+
+        } catch (Exception $e) {
+            error_log("Error en actualizar usuario: " . $e->getMessage());
+            http_response_code(500);
+            return false;
+        }
+    }
+
+
+    public function actualizarcontrasena($password, $email)
+    {
+        $persona = new Persona;
+        $idPersona = $persona->personaByEmail($email);
+        try {
+            $con = new ClaseConectar();
+            $con = $con->ProcedimientoParaConectar();
+            $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+            $cadena = "UPDATE `usuario` SET `password`='$passwordHash' WHERE `idPersona`=$idPersona";
+            if (mysqli_query($con, $cadena)) {
+                return $idPersona;
+            } else {
+                return $con->error;
+            }
+        } catch (Exception $th) {
+            http_response_code(500);
+            return $th->getMessage();
+        } finally {
+            $con->close();
+        }
+    }
+    public function eliminar($idUsuario) // Delete from usuario where id = $idUsuario
+    {
+        try {
+            $con = new ClaseConectar();
+            $con = $con->ProcedimientoParaConectar();
+
+             // Verificar si existen relaciones con el usuario
+             $query = "SELECT COUNT(*) as total FROM ticket WHERE idUsuario = $idUsuario";
+             $result = mysqli_query($con, $query);
+             $row = mysqli_fetch_assoc($result);
+
+             $query1 = "SELECT COUNT(*) as total1 FROM agente WHERE idUsuario = $idUsuario";
+             $result1 = mysqli_query($con, $query1);
+             $row1 = mysqli_fetch_assoc($result1);
+     
+             if ($row['total'] > 0 || $row1['total1'] > 0) {
+                     // devolver un mensaje de error
+                     return [
+                         'status' => 'error',
+                         'message' => 'No se puede eliminar el Usuario, ya se ha vinculado con Tickets o Agentes'
+                     ];
+                 } else {
+                    $cadena = "DELETE FROM `usuario` WHERE `idUsuario`= $idUsuario";
+                    if (mysqli_query($con, $cadena)) {
+                        return 1;
+                    } else {
+                        return [
+                            'status' => 'error',
+                            'message' => 'Error al intentar eliminar el usuario.'
+                        ];
+                    }
+                }
+        } catch (Exception $th) {
+            return [
+                'status' => 'error',
+                'message' => $th->getMessage()
+            ];
+        } finally {
+            $con->close();
+        }
+    }
+}

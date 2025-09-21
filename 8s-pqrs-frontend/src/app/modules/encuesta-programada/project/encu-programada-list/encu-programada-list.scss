@@ -1,0 +1,108 @@
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem;
+  background-color: #fff;
+}
+
+.tab-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+
+  .tab {
+    padding: 0.75rem 1.5rem;
+    background-color: #f1f1f1;
+    border: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+    cursor: pointer;
+    margin: 0 0.5rem;
+    font-weight: bold;
+
+    &.selected {
+      background-color: #e0e0e0;
+      border-bottom: 2px solid transparent;
+    }
+  }
+}
+
+.card-content {
+  h2 {
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: #888;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.encuesta-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #fefefe;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+
+      &.enviada {
+        background-color: #e0f3ff;
+        color: #007bff;
+      }
+
+      &.pendiente {
+        background-color: #fff4d6;
+        color: #ff9800;
+      }
+
+      &.nocontestada {
+        background-color: #ffe0e0;
+        color: #f44336;
+      }
+
+      i {
+        margin-right: 5px;
+      }
+    }
+
+    .intentos {
+      font-size: 0.9rem;
+      background: #f1f1f1;
+      padding: 0.25rem 0.5rem;
+      border-radius: 10px;
+    }
+
+    .send-btn {
+      background-color: #f7f7f7;
+      border-radius: 50%;
+      margin-left: auto;
+    }
+  }
+
+  .body {
+    margin-top: 0.5rem;
+
+    div {
+      margin: 0.25rem 0;
+    }
+
+    .proximo-envio {
+      margin-top: 0.5rem;
+    }
+  }
+}

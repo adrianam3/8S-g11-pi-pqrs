@@ -1,0 +1,29 @@
+<div class="card card-w-title" style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center;">
+        <i class="pi pi-address-book"></i>
+        <span style="font-size: 15px; margin-left: 5px;"><b>CLIENTES</b></span>
+    </div>
+</div>
+
+<div class="card card-w-title">
+    <p-tabs [(value)]="selectedTabIndex">
+        <p-tablist>
+            @for (tab of tabs; track tab.value) {
+            <p-tab [value]="tab.value">{{ tab.title }}</p-tab>
+            }
+        </p-tablist>
+
+        <p-tabpanels>
+            <p-tabpanel [value]="0">
+                <app-atencion-list></app-atencion-list>
+            </p-tabpanel>
+            <p-tabpanel [value]="1">
+                <app-encu-programada-list></app-encu-programada-list>
+                <!-- <app-atenciones-table></app-atenciones-table> Componente Atenciones -->
+            </p-tabpanel>
+            <p-tabpanel [value]="2">
+                <!-- <app-otro-componente></app-otro-componente> Otro componente -->
+            </p-tabpanel>
+        </p-tabpanels>
+    </p-tabs>
+</div>

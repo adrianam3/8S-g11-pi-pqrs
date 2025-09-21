@@ -1,0 +1,129 @@
+<div class="card card-w-title" style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center;">
+        <i class="pi pi-comments"></i>
+        <span style="font-size: 15px; margin-left: 5px;"><b>ENCUESTAS</b></span>
+    </div>
+    <div>
+        <p-button [raised]="true" severity="success" routerLink="/encuesta/encuesta-form/" label="Nueva Encuesta"
+            icon="pi pi-plus" />
+    </div>
+</div>
+
+<div class="card card-w-title">
+    <p-table #dt [value]="encuestasAll" dataKey="idEncuesta" [rows]="10" [loading]="loading" [rowHover]="true"
+        [showGridlines]="true" [paginator]="true"
+        [globalFilterFields]="['nombre','asuntoCorreo','remitenteNombre','fechaCreacion','fechaActualizacion']"
+        [tableStyle]="{ 'min-width': '75rem' }"
+        currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros."
+        [showCurrentPageReport]="true">
+
+        <ng-template #caption>
+            <div class="flex justify-content-between flex-column sm:flex-row">
+                <button pButton label="Borrar Filtros" class="p-button-outlined mb-2" icon="pi pi-filter-slash"
+                    (click)="showFilter()"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template #header>
+            <tr>
+                <th style="min-width: 15rem"> </th>
+                <th style="min-width: 15rem">
+                    <div class="flex justify-between items-center">
+                        Nombre Encuesta
+                        <p-columnFilter type="text" field="nombre" display="menu"
+                            placeholder="Buscar por Nombre"></p-columnFilter>
+                    </div>
+                </th>
+                <th style="min-width: 15rem">
+                    <div class="flex justify-between items-center">
+                        Asunto del Correo
+                        <p-columnFilter type="text" field="asuntoCorreo" display="menu"
+                            placeholder="Buscar por Asunto"></p-columnFilter>
+                    </div>
+                </th>
+                <th style="min-width: 15rem">
+                    <div class="flex justify-between items-center">
+                        Remitente
+                        <p-columnFilter type="text" field="remitenteNombre" display="menu"
+                            placeholder="Buscar por Remitente"></p-columnFilter>
+                    </div>
+                </th>
+                <th style="min-width: 12rem">
+                    <div class="flex justify-between items-center">
+                        Canal
+                        <p-columnFilter type="text" field="descCanal" display="menu"
+                            placeholder="Canal"></p-columnFilter>
+                    </div>
+                </th>
+                <th style="min-width: 10rem">
+                    <div class="flex justify-between items-center">
+                        Activa
+                        <p-columnFilter type="text" field="activa" display="menu" placeholder="Activa"></p-columnFilter>
+                    </div>
+                </th>
+                <th style="min-width: 12rem">
+                    <div class="flex justify-between items-center">
+                        Fecha Creación
+                        <p-columnFilter type="date" field="fechaCreacion" display="menu"
+                            placeholder="mm/dd/yyyy"></p-columnFilter>
+                    </div>
+                </th>
+                <th style="min-width: 12rem">
+                    <div class="flex justify-between items-center">
+                        Fecha Modificación
+                        <p-columnFilter type="date" field="fechaActualizacion" display="menu"
+                            placeholder="mm/dd/yyyy"></p-columnFilter>
+                    </div>
+                </th>
+                <th></th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-rowData>
+            <tr>
+                 <td style="text-align: center;">
+                    <button pButton type="button" icon="pi pi-chevron-circle-right" [rounded]="true" [outlined]="true"
+                        severity="success" [routerLink]="['/encuestas/preguntas/', rowData.idEncuesta]"
+                        pTooltip="Ver Preguntas">
+                    </button>
+                </td>
+                <td style="text-align: center;">{{ rowData.nombre }}</td>
+                <td style="text-align: center;">{{ rowData.asuntoCorreo }}</td>
+                <td style="text-align: center;">{{ rowData.remitenteNombre }}</td>
+                <td style="text-align: center;">{{ rowData.nombreCanal }}</td>
+                <td style="text-align: center;">
+                    <span [ngClass]="{
+                        'text-green-500': rowData.activa == 1,
+                        'text-red-500': rowData.activa == 0
+                    }">
+                        {{ rowData.activa == 1 ? 'Sí' : 'No' }}
+                    </span>
+                </td>
+                <td style="text-align: center;">{{ rowData.fechaCreacion }}</td>
+                <td style="text-align: center;">{{ rowData.fechaActualizacion }}</td>
+                <td style="text-align: center;">
+                    <button pButton type="button" icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
+                        severity="success" [routerLink]="['/encuesta/encuesta-form', rowData.idEncuesta]"
+                        pTooltip="Editar Encuesta">
+                    </button>
+
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                        (click)="confirmEliminar(rowData)" pTooltip="Eliminar" />
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-confirmDialog header key="encuesta" acceptLabel="Sí" rejectLabel="No" icon="pi pi-exclamation-triangle"
+    [closable]="false" [closeOnEscape]="false" [style]="{ width: '450px' }" acceptButtonStyleClass="p-button-text"
+    rejectButtonStyleClass="p-button-text">
+</p-confirmDialog>
+
+<p-toast></p-toast>
