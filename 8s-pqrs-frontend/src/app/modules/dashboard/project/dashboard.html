@@ -145,71 +145,80 @@
 
 
       <!-- ========== 2: PQRs ========== -->
-      <p-tabpanel [value]="2">
-        <div class="grid">
-          <div class="col-12 md:col-4">
-            <p-card header="Total PQRs">
-              <div class="kpi">{{ overview?.total_pqrs?.value ?? 0 }}</div>
-              <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
-            </p-card>
-          </div>
-          <div class="col-12 md:col-4">
-            <p-card header="PQRs abiertas">
-              <div class="kpi">{{ overview?.pqrs_abiertas?.value ?? 0 }}</div>
-              <div class="muted">Δ {{ overview?.pqrs_abiertas?.delta_pct_vs_prev ?? 0 }}%</div>
-            </p-card>
-          </div>
+<p-tabpanel [value]="2">
+  <div class="grid">
+    <!-- KPIs en 2 columnas desde md (>=768px) -->
+    <div class="col-12 md:col-6">
+      <p-card header="Total PQRs" class="eq-card kpi-card">
+        <div class="kpi">{{ overview?.total_pqrs?.value ?? 0 }}</div>
+        <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
+      </p-card>
+    </div>
 
-          <p-divider class="col-12" type="solid"></p-divider>
+    <div class="col-12 md:col-6">
+      <p-card header="PQRs abiertas" class="eq-card kpi-card">
+        <div class="kpi">{{ overview?.pqrs_abiertas?.value ?? 0 }}</div>
+        <div class="muted">Δ {{ overview?.pqrs_abiertas?.delta_pct_vs_prev ?? 0 }}%</div>
+      </p-card>
+    </div>
 
-          <div class="col-12 md:col-6">
-            <p-card header="PQRs por estado">
-              <div style="height:260px">
-                <p-chart type="bar" [data]="pqrsEstadoData" [options]="{ responsive:true, maintainAspectRatio:false }"
-                  *ngIf="pqrsEstadoData"></p-chart>
-              </div>
-            </p-card>
-          </div>
+    <!-- (opcional) separador visual -->
+    <!-- <p-divider class="col-12" type="solid"></p-divider> -->
 
-          <div class="col-12 md:col-6">
-            <p-card header="PQRs por categoría">
-              <p-table [value]="pqrsCat" [paginator]="true" [rows]="5" responsiveLayout="scroll">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th>Categoría</th>
-                    <th style="width:120px">Total</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-r>
-                  <tr>
-                    <td>{{ r.categoria }}</td>
-                    <td class="text-right">{{ r.total }}</td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            </p-card>
-          </div>
-
-          <div class="col-12">
-            <p-card header="PQRs por categoría padre">
-              <p-table [value]="pqrsCatPadre" [paginator]="true" [rows]="5" responsiveLayout="scroll">
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th>Categoría padre</th>
-                    <th style="width:120px">Total</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-r>
-                  <tr>
-                    <td>{{ r.categoria_padre }}</td>
-                    <td class="text-right">{{ r.total }}</td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            </p-card>
-          </div>
+    <!-- Gráficas / tablas debajo -->
+    <div class="col-12 md:col-6">
+      <p-card header="PQRs por estado">
+        <div style="height:260px">
+          <p-chart type="bar"
+                   [data]="pqrsEstadoData"
+                   [options]="{ responsive:true, maintainAspectRatio:false }"
+                   *ngIf="pqrsEstadoData"></p-chart>
         </div>
-      </p-tabpanel>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6">
+      <p-card header="PQRs por categoría">
+        <p-table [value]="pqrsCat" [paginator]="true" [rows]="5" responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Categoría</th>
+              <th style="width:120px">Total</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-r>
+            <tr>
+              <td>{{ r.categoria }}</td>
+              <td class="text-right">{{ r.total }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+
+    <div class="col-12">
+      <p-card header="PQRs por categoría padre">
+        <p-table [value]="pqrsCatPadre" [paginator]="true" [rows]="5" responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Categoría padre</th>
+              <th style="width:120px">Total</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-r>
+            <tr>
+              <td>{{ r.categoria_padre }}</td>
+              <td class="text-right">{{ r.total }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  </div>
+</p-tabpanel>
+
+
+
     </p-tabpanels>
   </p-tabs>
 </div>
