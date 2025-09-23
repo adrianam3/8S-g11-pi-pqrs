@@ -1,0 +1,428 @@
+/* ===========================
+   PÁGINA DASHBOARD (SCOPED)
+   =========================== */
+
+/* Evitar doble marco: el componente y su wrapper quedan transparentes.
+   El fondo gris se aplica SOLO al contenedor del layout vía :host-context */
+:host {
+  display: block;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* wrapper interno (si lo usas en el HTML) */
+.dashboard-page {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  width: 100%;
+}
+
+/* Fondo gris claro SOLO cuando este componente está dentro del layout */
+:host-context(.layout-main-container),
+:host-context(.layout-main),
+:host-context(.layout-content) {
+  background: #f5f7fb !important; /* gris claro tipo dashboard */
+}
+
+/* ===========================
+   TOOLBAR (filtros)
+   =========================== */
+.toolbar-sticky {
+  position: sticky;
+  top: 0;          /* ajusta si tu layout tiene header fijo más alto */
+  z-index: 10;
+}
+
+/* ===========================
+   TIPOGRAFÍA / UTILIDADES
+   =========================== */
+.kpi {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.muted {
+  color: var(--text-color-secondary);
+  font-size: .85rem;
+}
+
+.text-right { text-align: right; }
+
+.empty-state {
+  padding: 1.25rem;
+  color: var(--text-color-secondary);
+  text-align: center;
+}
+
+/* ===========================
+   CARDS / PANELS
+   =========================== */
+:host ::ng-deep .p-card,
+:host ::ng-deep .p-panel {
+  background: #ffffff;                 /* tarjetas en blanco */
+  border-radius: .75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+:host ::ng-deep .p-card .p-card-title {
+  font-weight: 600;
+}
+
+:host ::ng-deep .p-card .p-card-body {
+  overflow: hidden;                    /* evita que el canvas sobresalga */
+}
+
+/* KPIs: misma altura en la primera fila */
+.kpi-card {
+  min-height: 112px;                   /* sube a 128px si quieres más alto */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Cuerpo flexible para charts dentro de cards */
+.eq-card .p-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  height: 100%;
+}
+
+/* Contenedores de gráficos con alturas estándar */
+.chart-holder { flex: 1; width: 100%; }
+.chart-240 { height: 240px; }
+.chart-300 { height: 300px; }
+
+/* El canvas del chart llena siempre su contenedor */
+:host ::ng-deep .p-chart,
+:host ::ng-deep .p-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ===========================
+   GRID / GUTTERS (espacios)
+   =========================== */
+/* Fallback del grid por si PrimeFlex fuera pisado por otro CSS */
+:host .grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -0.75rem;   /* gutters más anchos para ver esquinas redondeadas */
+  margin-right: -0.75rem;
+}
+
+:host .grid > [class*="col-"] {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  box-sizing: border-box;
+  margin-bottom: 1rem;     /* espacio vertical entre tarjetas */
+}
+
+/* Columnas base */
+:host .col-12 { flex: 0 0 100%; max-width: 100%; }
+
+/* sm: >=576px */
+@media (min-width: 576px) {
+  :host .sm\:col-6 { flex: 0 0 50%; max-width: 50%; }
+}
+
+/* md: >=768px */
+@media (min-width: 768px) {
+  :host .md\:col-6 { flex: 0 0 50%; max-width: 50%; }
+  :host .md\:col-3 { flex: 0 0 25%; max-width: 25%; }
+}
+
+/* lg: >=992px */
+@media (min-width: 992px) {
+  :host .lg\:col-3 { flex: 0 0 25%; max-width: 25%; }
+  :host .lg\:col-6 { flex: 0 0 50%; max-width: 50%; }
+}
+
+/* xl: >=1200px */
+@media (min-width: 1200px) {
+  :host .xl\:col-8 { flex: 0 0 66.6667%; max-width: 66.6667%; }
+  :host .xl\:col-4 { flex: 0 0 33.3333%; max-width: 33.3333%; }
+}
+
+/* ===========================
+   TABS (PrimeNG TabsModule)
+   =========================== */
+.tabs-compact {
+  /* lista de pestañas */
+  ::ng-deep .p-tablist {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    border-bottom: 1px solid var(--surface-border);
+    padding: 0 .25rem;
+    margin: .25rem 0 .75rem;
+  }
+
+  /* botón de pestaña */
+  ::ng-deep button[p-tab] {
+    background: transparent;
+    border: 0;
+    color: var(--text-color-secondary);
+    padding: .75rem 0;
+    margin: 0 1rem 0 0;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* activo */
+  ::ng-deep button[p-tab][data-state="active"] {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+  }
+
+  /* hover/focus */
+  ::ng-deep button[p-tab]:hover,
+  ::ng-deep button[p-tab]:focus-visible {
+    color: var(--primary-color);
+  }
+
+  /* paneles ocupan 100% */
+  ::ng-deep .p-tabpanels,
+  ::ng-deep .p-tabpanel { width: 100%; }
+}
+
+/* ===========================
+   Responsivo fino
+   =========================== */
+@media (max-width: 991px) {
+  .chart-240 { height: 220px; }
+  .chart-300 { height: 260px; }
+  .kpi { font-size: 1.7rem; }
+}
+@media (max-width: 640px) {
+  .chart-240, .chart-300 { height: 220px; }
+  .kpi { font-size: 1.5rem; }
+  .tabs-compact ::ng-deep .p-tablist { gap: .5rem; }
+}
+
+
+/* ===== TabsModule: quitar fondo/blancos por defecto ===== */
+:host ::ng-deep .p-tabs {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+:host ::ng-deep .p-tabs .p-tablist {
+  background: transparent !important;
+  border-bottom: 1px solid var(--surface-border) !important; /* dejamos solo el subrayado */
+}
+
+:host ::ng-deep .p-tabs .p-tabpanels {
+  background: transparent !important;  /* <- clave */
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .p-tabs .p-tabpanel {
+  background: transparent !important;  /* <- clave */
+  border-radius: 0 !important;
+  padding: 0 !important;               /* opcional: que no meta padding extra */
+}
+
+/* Si usas mi clase .tabs-compact, aplica también allí por si cambia el selector */
+.tabs-compact ::ng-deep .p-tabpanels,
+.tabs-compact ::ng-deep .p-tabpanel,
+.tabs-compact ::ng-deep .p-tabs {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ===== TabsModule: usar el mismo fondo del tema ===== */
+/* Gris del lienzo del tema (Sakai/PrimeNG) */
+:host ::ng-deep .p-tabs,
+:host ::ng-deep .p-tabs .p-tablist,
+:host ::ng-deep .p-tabs .p-tabpanels,
+:host ::ng-deep .p-tabs .p-tabpanel {
+  background: var(--surface-ground) !important;
+}
+
+/* Si tu barra de filtros dentro del dashboard debe “flotar” sobre ese ground,
+   mantenla como card blanca (ya lo tienes), pero si la quieres también
+   con el ground del tema, descomenta esta línea: */
+/* .toolbar-sticky { background: var(--surface-ground) !important; } */
+
+/* Aseguramos que las tarjetas sigan blancas y con sombra suave */
+:host ::ng-deep .p-card,
+:host ::ng-deep .p-panel {
+  background: var(--surface-card) !important; /* blanco del tema */
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  border-radius: .75rem;
+}
+/* --- TabsModule: tab activo en VERDE (solo en este componente) --- */
+:root {
+  /* si quieres cambiar el tono, ajusta esta variable */
+  --tab-active-green: #10b981; /* verde tipo "emerald" */
+}
+
+.tabs-compact {
+  /* color por defecto de las etiquetas */
+  ::ng-deep button[p-tab] {
+    color: var(--text-color-secondary);
+    border-bottom: 2px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
+  }
+
+  /* TAB ACTIVO: texto verde + subrayado verde */
+  ::ng-deep button[p-tab][data-state="active"] {
+    color: var(--tab-active-green) !important;
+    border-bottom-color: var(--tab-active-green) !important;
+    font-weight: 700; /* opcional */
+  }
+
+  /* hover/focus también en verde */
+  ::ng-deep button[p-tab]:hover,
+  ::ng-deep button[p-tab]:focus-visible {
+    color: var(--tab-active-green);
+  }
+
+  /* iconos dentro del botón del tab */
+  ::ng-deep button[p-tab] .pi {
+    color: currentColor; /* hereda el verde cuando está activo/hover */
+  }
+
+  /* línea inferior del tablist (gris) para contraste */
+  ::ng-deep .p-tablist {
+    border-bottom: 1px solid var(--surface-border) !important;
+  }
+}
+
+//////mas
+/// 
+/// 
+
+/* ====== Activo en VERDE para TabsModule (robusto a variaciones del tema) ====== */
+:root { --tab-active-green: #10b981; } /* cambia el tono si quieres */
+
+.tabs-compact {
+  /* color base de las etiquetas */
+  ::ng-deep .p-tablist [role="tab"] {
+    color: var(--text-color-secondary);
+    border-bottom: 2px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
+  }
+
+  /* Estados de tab ACTIVO que usa PrimeNG (cubre varias variantes) */
+  ::ng-deep .p-tablist [role="tab"][aria-selected="true"],
+  ::ng-deep .p-tablist .p-highlight[role="tab"],
+  ::ng-deep .p-tablist .p-tab.p-tab-active,
+  ::ng-deep .p-tablist button[aria-selected="true"],
+  ::ng-deep .p-tablist button.p-highlight,
+  ::ng-deep .p-tablist button.p-tab-active,
+  ::ng-deep .p-tablist .p-tab[data-state="active"] {
+    color: var(--tab-active-green) !important;
+    border-bottom-color: var(--tab-active-green) !important;
+    font-weight: 700; /* opcional */
+  }
+
+  /* Barra activa que algunos temas dibujan bajo la pestaña */
+  ::ng-deep .p-tablist-active-bar {
+    background-color: var(--tab-active-green) !important;
+  }
+
+  /* Hover/focus */
+  ::ng-deep .p-tablist [role="tab"]:hover,
+  ::ng-deep .p-tablist [role="tab"]:focus-visible {
+    color: var(--tab-active-green);
+  }
+
+  /* Iconos dentro del botón del tab heredan el color */
+  ::ng-deep .p-tablist [role="tab"] .pi { color: currentColor; }
+
+  /* Línea inferior gris del tablist para contraste */
+  ::ng-deep .p-tablist {
+    border-bottom: 1px solid var(--surface-border) !important;
+  }
+}
+
+// otro
+:root { --tab-active-green: #10b981; } /* cambia el tono si quieres */
+
+.tabs-compact {
+  /* estilo base de los tabs */
+  ::ng-deep .p-tablist button[p-tab] {
+    color: var(--text-color-secondary);
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    transition: color .15s ease, border-color .15s ease;
+  }
+
+  /* ACTIVO: nuestra clase propia */
+  ::ng-deep .p-tablist button[p-tab].is-active {
+    color: var(--tab-active-green) !important;
+    border-bottom-color: var(--tab-active-green) !important;
+    font-weight: 700; /* opcional */
+  }
+
+  /* Hover/focus consistente */
+  ::ng-deep .p-tablist button[p-tab]:hover,
+  ::ng-deep .p-tablist button[p-tab]:focus-visible {
+    color: var(--tab-active-green);
+  }
+
+  /* Icono hereda el color del texto */
+  ::ng-deep .p-tablist button[p-tab] .pi { color: currentColor; }
+
+  /* Si tu tema dibuja una barrita activa, ponla verde también */
+  ::ng-deep .p-tablist-active-bar {
+    background-color: var(--tab-active-green) !important;
+  }
+}
+.tabs-compact ::ng-deep .p-tablist {
+  border-bottom: 1px solid var(--surface-border) !important;
+}
+
+//
+
+/* === Verde para TabsModule (forzado y local) === */
+.tabs-compact {
+  /* hacemos que dentro de este bloque el primario sea verde */
+  --primary-color: #10b981; /* emerald; cambia si quieres otro tono */
+
+  /* base */
+  ::ng-deep .p-tablist [role="tab"] {
+    color: var(--text-color-secondary);
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    transition: color .15s ease, border-color .15s ease;
+  }
+
+  /* ACTIVO (cubriendo todas las variantes del tema) */
+  ::ng-deep .p-tablist [role="tab"].is-active,
+  ::ng-deep .p-tablist [role="tab"][aria-selected="true"],
+  ::ng-deep .p-tablist .p-highlight[role="tab"],
+  ::ng-deep .p-tablist .p-tab.p-tab-active,
+  ::ng-deep .p-tablist button[p-tab].is-active {
+    color: var(--primary-color) !important;
+    border-bottom-color: var(--primary-color) !important;
+    font-weight: 700;
+  }
+
+  /* barra activa que dibuja PrimeNG */
+  ::ng-deep .p-tablist-active-bar {
+    background-color: var(--primary-color) !important;
+    height: 2px !important;
+  }
+
+  /* hover/focus */
+  ::ng-deep .p-tablist [role="tab"]:hover,
+  ::ng-deep .p-tablist [role="tab"]:focus-visible {
+    color: var(--primary-color);
+  }
+
+  /* el icono hereda el color del texto */
+  ::ng-deep .p-tablist [role="tab"] .pi { color: currentColor; }
+}

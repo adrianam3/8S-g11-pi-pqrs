@@ -226,8 +226,44 @@ switch ($_GET["op"] ?? '') {
         else { http_response_code(500); echo json_encode(["success"=>false, "error"=>$res]); }
         break;
 
-    default:
-        http_response_code(400);
-        echo json_encode(["message" => "Operación no soportada. Usa op=todos|uno|insertar|actualizar|eliminar|activar|desactivar|contar|dependencias|programar_por_atencion|programar_por_encuesta|marcar_envio|marcar_no_contestada|reabrir|registrar_consentimiento"]);
+
+            // === SP: generar PQR desde respuestas de una programación
+    case 'generar_pqrs':
+        header('Content-Type: application/json; charset=utf-8');
+        $id = filter_var(param('idProgEncuesta', null), FILTER_VALIDATE_INT);
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(["success"=>false, "message"=>"Parámetro idProgEncuesta inválido"]);
+            break;
+        }
+        $res = $ep->sp_generar_pqrs_desde_respuestas($id);
+        if (is_array($res)) {
+            // Tenemos idPqrs
+            echo json_encode(["success"=>true, "idPqrs"=>$res['idPqrs']]);
+        } else if ($res === 1 || $res === '1') {
+            // Se ejecutó ok, pero no pudimos leer idPqrs (fallback)
+            echo json_encode(["success"=>true]);
+        } else {
+            // Error de negocio (SIGNAL) o técnico
+            http_response_code(400);
+            echo json_encode([
+                "success"=>false,
+                "message"=>"No se pudo generar el PQR desde las respuestas",
+                "error"=>$res
+            ]);
+        }
         break;
+
+
+    // default:
+    //     http_response_code(400);
+    //     echo json_encode(["message" => "Operación no soportada. Usa op=todos|uno|insertar|actualizar|eliminar|activar|desactivar|contar|dependencias|programar_por_atencion|programar_por_encuesta|marcar_envio|marcar_no_contestada|reabrir|registrar_consentimiento"]);
+    //     break;
+    default:
+    http_response_code(400);
+    echo json_encode([
+        "message" => "Operación no soportada. Usa op=todos|uno|insertar|actualizar|eliminar|activar|desactivar|contar|dependencias|programar_por_atencion|programar_por_encuesta|marcar_envio|marcar_no_contestada|reabrir|registrar_consentimiento|generar_pqrs"
+    ]);
+    break;
+
 }

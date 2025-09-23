@@ -430,4 +430,81 @@ class EncuestasProgramadas
         $stmt->close(); $con->close();
         return $ok ? 1 : $err;
     }
+    /**
+     * SP: Generar PQRs desde respuestas de una programación
+     * CALL sp_generar_pqrs_desde_respuestas(p_idprogencuesta)
+     *
+     * Comportamiento:
+     *  - El SP puede lanzar SIGNAL (45000) con mensajes de negocio; en ese caso retornamos el texto de error.
+     *  - Si todo OK, intentamos recuperar el idPqrs generado para esa programación.
+     *
+     * Retorna:
+     *   - array("idPqrs" => int) cuando podemos identificarlo;
+     *   - 1 si se ejecutó pero no hallamos el idPqrs (poco probable, pero posible);
+     *   - string (mensaje de error) si falla.
+     */
+    public function sp_generar_pqrs_desde_respuestas($idProgEncuesta)
+    {
+        $idProgEncuesta = (int)$idProgEncuesta;
+
+        $conObj = new ClaseConectar();
+        $con = $conObj->ProcedimientoParaConectar();
+
+        // 1) Ejecutar el CALL
+        $stmt = $con->prepare('CALL sp_generar_pqrs_desde_respuestas(?)');
+        if (!$stmt) {
+            $err = $con->error;
+            $con->close();
+            return $err;
+        }
+
+        $stmt->bind_param('i', $idProgEncuesta);
+
+        if (!$stmt->execute()) {
+            // Errores de negocio (SIGNAL 45000) también llegan aquí como texto
+            $err = $stmt->error;
+            $stmt->close();
+            $con->close();
+            return $err ?: 'Error al ejecutar sp_generar_pqrs_desde_respuestas.';
+        }
+
+        // 2) Drenar posibles resultsets intermedios del SP
+        while ($con->more_results() && $con->next_result()) {
+            if ($extra = $con->use_result()) { $extra->free(); }
+        }
+        $stmt->close();
+
+        // 3) Intentar traer el idPqrs creado para esta programación
+        $q = "SELECT idPqrs 
+                FROM pqrs
+               WHERE idProgEncuesta = ?
+            ORDER BY idPqrs DESC
+               LIMIT 1";
+        $st2 = $con->prepare($q);
+        if ($st2) {
+            $st2->bind_param('i', $idProgEncuesta);
+            if ($st2->execute()) {
+                $res = $st2->get_result();
+                $row = $res->fetch_assoc();
+                $st2->close();
+                $con->close();
+                if ($row && isset($row['idPqrs'])) {
+                    return ['idPqrs' => (int)$row['idPqrs']];
+                }
+                return 1; // SP ok, pero no hallamos id (fallback)
+            } else {
+                $err = $st2->error;
+                $st2->close();
+                $con->close();
+                return $err ?: 1;
+            }
+        } else {
+            $err = $con->error;
+            $con->close();
+            // No bloqueamos el éxito del SP solo por el SELECT de verificación
+            return $err ?: 1;
+        }
+    }
+
+
 }

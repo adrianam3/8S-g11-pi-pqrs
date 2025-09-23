@@ -96,6 +96,10 @@ export const appRoutes: Routes = [
                     import('./app/modules/dashboard/dashboard.routes').then((m) => m.dashboardRoutes)
             },
 
+            // dashboard anterior 
+
+            { path: 'dashOld', component: Dashboard },
+
             // { path: 'uikit', loadChildren: () => import('./app/pages/uikit/uikit.routes') },
             // { path: 'documentation', component: Documentation },
             // { path: 'pages', loadChildren: () => import('./app/pages/pages.routes') }
