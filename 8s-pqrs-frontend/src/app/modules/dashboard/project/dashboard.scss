@@ -426,3 +426,54 @@
   /* el icono hereda el color del texto */
   ::ng-deep .p-tablist [role="tab"] .pi { color: currentColor; }
 }
+
+/* Encabezado de KPI con icono */
+.kpi-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: .25rem;
+}
+.kpi-icon { font-size: 1.1rem; opacity: .9; }
+
+/* Colores de icono */
+.kpi-blue   { color: #3b82f6; }  /* blue-500   */
+.kpi-indigo { color: #6366f1; }  /* indigo-500 */
+.kpi-green  { color: #10b981; }  /* emerald-500*/
+.kpi-teal   { color: #14b8a6; }  /* teal-500   */
+
+// --
+
+/* ===== KPI headers con icono + tooltip ===== */
+.kpi-header {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+}
+
+.kpi-ico {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+}
+
+.kpi-ico.warn {
+  color: #ef4444;
+  background: rgba(239, 68, 68, .12);
+}
+
+.kpi-ico.info {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, .12);
+}
+
+.kpi-ico.ok {
+  color: #10b981;
+  background: rgba(16, 185, 129, .12);
+}
