@@ -43,10 +43,9 @@
       <!-- ========== 0: ENCUESTAS ========== -->
       <p-tabpanel [value]="0">
         <div class="grid">
-
           <div class="col-12 md:col-3">
             <p-card class="eq-card kpi-card">
-              <div class="kpi-header">
+              <div class="kpi-header" pTooltip="Encuestas programadas en el período" tooltipPosition="top">
                 <i class="pi pi-calendar kpi-icon kpi-blue"></i>
                 <span>Programadas</span>
               </div>
@@ -56,7 +55,7 @@
 
           <div class="col-12 md:col-3">
             <p-card class="eq-card kpi-card">
-              <div class="kpi-header">
+              <div class="kpi-header" pTooltip="Encuestas enviadas" tooltipPosition="top">
                 <i class="pi pi-envelope kpi-icon kpi-indigo"></i>
                 <span>Enviadas</span>
               </div>
@@ -66,7 +65,7 @@
 
           <div class="col-12 md:col-3">
             <p-card class="eq-card kpi-card">
-              <div class="kpi-header">
+              <div class="kpi-header" pTooltip="Encuestas con al menos una respuesta" tooltipPosition="top">
                 <i class="pi pi-check-circle kpi-icon kpi-green"></i>
                 <span>Respondidas</span>
               </div>
@@ -76,29 +75,41 @@
 
           <div class="col-12 md:col-3">
             <p-card class="eq-card kpi-card">
-              <div class="kpi-header">
+              <div class="kpi-header" pTooltip="Tasa de respuesta = Respondidas / Enviadas" tooltipPosition="top">
                 <i class="pi pi-chart-line kpi-icon kpi-teal"></i>
                 <span>Tasa Respuesta</span>
               </div>
               <div class="kpi">{{ (encuestasResumen?.tasa_pct ?? 0) | number:'1.0-0' }}%</div>
             </p-card>
           </div>
-
         </div>
       </p-tabpanel>
-
 
       <!-- ========== 1: SATISFACCIÓN ========== -->
       <p-tabpanel [value]="1">
         <div class="grid">
-          <!-- KPIs -->
+          <!-- KPIs con icono + tooltip -->
           <div class="col-12 sm:col-6 lg:col-3">
-            <p-card header="CSAT (%)" class="eq-card kpi-card">
+            <p-card class="eq-card kpi-card">
+              <ng-template pTemplate="header">
+                <div class="kpi-header" pTooltip="Porcentaje de satisfechos (4–5) en preguntas no NPS/CES"
+                  tooltipPosition="top">
+                  <i class="pi pi-thumbs-up kpi-icon kpi-green"></i>
+                  <span>CSAT (%)</span>
+                </div>
+              </ng-template>
               <div class="kpi">{{ kpis?.csat ?? 0 }}%</div>
             </p-card>
           </div>
+
           <div class="col-12 sm:col-6 lg:col-3">
-            <p-card header="NPS" class="eq-card kpi-card">
+            <p-card class="eq-card kpi-card">
+              <ng-template pTemplate="header">
+                <div class="kpi-header" pTooltip="Net Promoter Score (Promotores − Detractores)" tooltipPosition="top">
+                  <i class="pi pi-bullseye kpi-icon kpi-indigo"></i>
+                  <span>NPS</span>
+                </div>
+              </ng-template>
               <div class="kpi">{{ kpis?.nps ?? 0 }}</div>
               <div class="muted">
                 P {{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}% ·
@@ -107,13 +118,28 @@
               </div>
             </p-card>
           </div>
+
           <div class="col-12 sm:col-6 lg:col-3">
-            <p-card header="CES (1–5)" class="eq-card kpi-card">
+            <p-card class="eq-card kpi-card">
+              <ng-template pTemplate="header">
+                <div class="kpi-header" pTooltip="Customer Effort Score promedio (1–5)" tooltipPosition="top">
+                  <i class="pi pi-sliders-h kpi-icon kpi-blue"></i>
+                  <span>CES (1–5)</span>
+                </div>
+              </ng-template>
               <div class="kpi">{{ kpis?.ces ?? 0 }}</div>
             </p-card>
           </div>
+
           <div class="col-12 sm:col-6 lg:col-3">
-            <p-card header="Satisfacción (1–10)" class="eq-card kpi-card">
+            <p-card class="eq-card kpi-card">
+              <ng-template pTemplate="header">
+                <div class="kpi-header" pTooltip="Promedio de satisfacción (1–5) en preguntas no NPS/CES"
+                  tooltipPosition="top">
+                  <i class="pi pi-smile kpi-icon kpi-teal"></i>
+                  <span>Satisfacción (1–5)</span>
+                </div>
+              </ng-template>
               <div class="kpi">{{ overview?.satisfaccion_avg_10?.value ?? 0 }}</div>
               <p-progressBar *ngIf="overview?.satisfaccion_avg_10"
                 [value]="((overview?.satisfaccion_avg_10?.value ?? 0) * 10)"></p-progressBar>
@@ -132,6 +158,7 @@
               </div>
             </p-card>
           </div>
+
           <div class="col-12 lg:col-6">
             <p-card header="NPS por {{ segment }}" class="eq-card">
               <div class="chart-holder chart-240">
@@ -139,6 +166,7 @@
               </div>
             </p-card>
           </div>
+
           <div class="col-12 lg:col-6">
             <p-card header="CES por {{ segment }}" class="eq-card">
               <div class="chart-holder chart-240">
@@ -157,6 +185,7 @@
               </div>
             </p-card>
           </div>
+
           <div class="col-12 xl:col-4">
             <p-card header="Distribución de calificaciones (1–5)" class="eq-card">
               <div class="chart-holder chart-300">
@@ -179,43 +208,72 @@
       <!-- ========== 2: PQRs ========== -->
       <p-tabpanel [value]="2">
         <div class="grid">
-          <!-- KPIs lado a lado -->
-          <div class="col-12 md:col-6">
-            <p-card header="Total PQRs" class="eq-card kpi-card">
-              <div class="kpi">{{ pqrsResumen?.total ?? overview?.total_pqrs?.value ?? 0 }}</div>
-              <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
-            </p-card>
-          </div>
-          <div class="col-12 md:col-6">
-            <p-card header="PQRs abiertas" class="eq-card kpi-card">
-              <div class="kpi">{{ pqrsResumen?.abiertos ?? overview?.pqrs_abiertas?.value ?? 0 }}</div>
-              <div class="muted">Δ {{ overview?.pqrs_abiertas?.delta_pct_vs_prev ?? 0 }}%</div>
-            </p-card>
+
+          <!-- KPIs PQRs: 5 en la primera fila -->
+          <div class="col-12">
+            <div class="kpi-row kpi-5">
+              <p-card class="eq-card kpi-card kpi-mini">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="Total de PQRs creadas en el período" tooltipPosition="top">
+                    <i class="pi pi-inbox kpi-icon kpi-indigo"></i>
+                    <span>Total PQRs</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsResumen?.total ?? overview?.total_pqrs?.value ?? 0 }}</div>
+                <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
+              </p-card>
+
+              <p-card class="eq-card kpi-card kpi-mini">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="PQRs no resueltas (no cerradas)" tooltipPosition="top">
+                    <i class="pi pi-info-circle kpi-icon kpi-blue"></i>
+                    <span>PQRs abiertas</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsResumen?.abiertos ?? overview?.pqrs_abiertas?.value ?? 0 }}</div>
+                <div class="muted">Δ {{ overview?.pqrs_abiertas?.delta_pct_vs_prev ?? 0 }}%</div>
+              </p-card>
+
+              <p-card class="eq-card kpi-card kpi-mini">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="PQRs en trámite" tooltipPosition="top">
+                    <i class="pi pi-refresh kpi-icon kpi-teal"></i>
+                    <span>En proceso</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsResumen?.en_proceso ?? 0 }}</div>
+              </p-card>
+
+              <p-card class="eq-card kpi-card kpi-mini">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="PQRs escaladas" tooltipPosition="top">
+                    <i class="pi pi-arrow-up-right kpi-icon kpi-purple"></i>
+                    <span>Escaladas</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsResumen?.escalados ?? 0 }}</div>
+              </p-card>
+
+              <p-card class="eq-card kpi-card kpi-mini">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="PQRs cerradas o resueltas" tooltipPosition="top">
+                    <i class="pi pi-check-circle kpi-icon kpi-green"></i>
+                    <span>Cerradas</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsResumen?.cerrados ?? 0 }}</div>
+              </p-card>
+            </div>
           </div>
 
-          <!-- Más KPIs (opcionales) -->
-          <div class="col-12 md:col-6">
-            <p-card header="En proceso" class="eq-card kpi-card">
-              <div class="kpi">{{ pqrsResumen?.en_proceso ?? 0 }}</div>
-            </p-card>
-          </div>
-          <div class="col-12 md:col-6">
-            <p-card header="Escaladas" class="eq-card kpi-card">
-              <div class="kpi">{{ pqrsResumen?.escalados ?? 0 }}</div>
-            </p-card>
-          </div>
-          <div class="col-12 md:col-6">
-            <p-card header="Cerradas" class="eq-card kpi-card">
-              <div class="kpi">{{ pqrsResumen?.cerrados ?? 0 }}</div>
-            </p-card>
-          </div>
 
           <p-divider class="col-12" type="solid"></p-divider>
 
           <div class="col-12 md:col-6">
             <p-card header="PQRs por estado">
               <div style="height:260px">
-                <p-chart type="bar" [data]="pqrsEstadoData" [options]="{ responsive:true, maintainAspectRatio:false }"
+                <!-- <p-chart type="bar" [data]="pqrsEstadoData" [options]="{ responsive:true, maintainAspectRatio:false }" -->
+                 <p-chart type="bar" [data]="pqrsEstadoData" [options]="pqrsEstadoOpts"
                   *ngIf="pqrsEstadoData"></p-chart>
               </div>
             </p-card>
@@ -264,7 +322,6 @@
       <!-- ========== 3: EVOLUCIÓN ========== -->
       <p-tabpanel [value]="3">
         <div class="grid">
-          <!-- Fila 1: CSAT / NPS -->
           <div class="col-12 lg:col-6">
             <p-card header="CSAT (serie)" class="eq-card">
               <div class="chart-holder chart-300">
@@ -285,7 +342,6 @@
             </p-card>
           </div>
 
-          <!-- Fila 2: CES / PQRs -->
           <div class="col-12 lg:col-6">
             <p-card header="CES (serie)" class="eq-card">
               <div class="chart-holder chart-300">
@@ -306,7 +362,6 @@
             </p-card>
           </div>
 
-          <!-- Fila 3: Mixto CSAT vs PQRs -->
           <div class="col-12">
             <p-card header="Correlación: Satisfacción (1–5) vs PQRs" class="eq-card">
               <div class="chart-holder chart-300">

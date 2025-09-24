@@ -233,8 +233,8 @@ try {
       SELECT DATE_FORMAT(rc.fechaRespuesta,'%Y-%m') periodo,
              IFNULL(ROUND(AVG(
                CASE
-                 WHEN p.esNps=0 AND p.esCes=0 AND rc.valorNumerico BETWEEN 1 AND 10 THEN
-                   CASE WHEN rc.valorNumerico BETWEEN 1 AND 10 THEN
+                 WHEN p.esNps=0 AND p.esCes=0 AND rc.valorNumerico BETWEEN 1 AND 5 THEN
+                   CASE WHEN rc.valorNumerico BETWEEN 1 AND 5 THEN
                      CASE WHEN rc.valorNumerico <= 5 THEN rc.valorNumerico
                           ELSE rc.valorNumerico/2
                      END

@@ -477,3 +477,119 @@
   color: #10b981;
   background: rgba(16, 185, 129, .12);
 }
+
+//--
+// /* ====== Fila de 5 KPIs (20% cada uno en desktop) ====== */
+// .kpi-5 { display: flex; flex-wrap: wrap; margin-left: -0.75rem; margin-right: -0.75rem; }
+// .kpi-5 .kpi-col { padding-left: .75rem; padding-right: .75rem; margin-bottom: 1rem; box-sizing: border-box; }
+
+// /* Desktop ≥1200px: 5 por fila (20%) */
+// @media (min-width: 1200px) {
+//   .kpi-5 .kpi-col { flex: 0 0 20%; max-width: 20%; }
+// }
+
+// /* Laptop/Tablet ancho: 3 por fila */
+// @media (min-width: 768px) and (max-width: 1199.98px) {
+//   .kpi-5 .kpi-col { flex: 0 0 33.3333%; max-width: 33.3333%; }
+// }
+
+// /* Tablet chico: 2 por fila */
+// @media (min-width: 576px) and (max-width: 767.98px) {
+//   .kpi-5 .kpi-col { flex: 0 0 50%; max-width: 50%; }
+// }
+
+// /* Móvil: 1 por fila */
+// @media (max-width: 575.98px) {
+//   .kpi-5 .kpi-col { flex: 0 0 100%; max-width: 100%; }
+// }
+
+/* Alineación vertical del header con icono */
+.kpi-header { display: flex; align-items: center; gap: .5rem; font-weight: 600; color: var(--text-color-secondary); }
+.kpi-icon { font-size: 1.1rem; line-height: 1; }
+
+
+// --
+
+/* ====== KPIs compactos con icono en header ====== */
+.kpi-header{
+  display: flex;
+  align-items: center;      /* <-- alinea el icono con el texto */
+  gap: .5rem;
+  margin-bottom: .25rem;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+}
+
+.kpi-icon{
+  font-size: 1.1rem;
+  line-height: 1;           /* <-- evita que “salte” hacia abajo */
+  display: inline-block;
+}
+
+/* Colores de iconos (igual que en Encuestas) */
+.kpi-blue   { color: #3b82f6; }
+.kpi-indigo { color: #6366f1; }
+.kpi-teal   { color: #14b8a6; }
+.kpi-green  { color: #22c55e; }
+.kpi-purple { color: #8b5cf6; }
+
+/* Tarjeta KPI mini (menos padding, más compacta) */
+.kpi-card.kpi-mini .p-card-body{
+  padding: .85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+
+// /* Fila de KPIs en grid uniforme */
+// .kpi-row{
+//   display: grid;
+//   gap: 1rem;
+//   grid-template-columns: repeat(1, minmax(0, 1fr));
+// }
+
+// /* 5 columnas en ≥768px */
+// @media (min-width: 768px){
+//   .kpi-row.kpi-5{ grid-template-columns: repeat(5, 1fr); }
+// }
+
+// /* Si algún día usas 4 KPIs, tendrás esto listo */
+// @media (min-width: 768px){
+//   .kpi-row.kpi-4{ grid-template-columns: repeat(4, 1fr); }
+// }
+
+
+// --
+
+/* En móvil se apilan, en pantallas medianas 3-4, y en desktop 5 exactas */
+.kpi-row{
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+@media (min-width: 1200px){
+  .kpi-row.kpi-5 { grid-template-columns: repeat(5, 1fr); } /* fuerzo 5 en desktop amplio */
+}
+
+/* Alineación fina del icono dentro del header de la tarjeta KPI */
+.kpi-header {
+  display: inline-flex;
+  align-items: center;     /* centra verticalmente texto + icono */
+  gap: .5rem;
+  line-height: 1.2;        /* un poco más de altura de línea ayuda a ver “más abajo” */
+}
+
+/* baja sutilmente el icono para que no se vea “flotando” arriba */
+.kpi-header .kpi-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(2px);  /* <- mueve hacia abajo (ajusta a 1px/3px si quieres) */
+  opacity: .9;
+}
+/* Header de las cards más compacto (opcional) */
+:host ::ng-deep .p-card .p-card-header {
+  padding: .75rem 1rem .5rem; /* top, lados, bottom */
+}

@@ -18,6 +18,8 @@ import { TabsModule } from 'primeng/tabs';
 
 /* Chart.js (auto) */
 import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';   // <—
+Chart.register(ChartDataLabels);
 
 /* Servicio */
 import { DashboardService } from '@/modules/Services/dashboard-service';
@@ -174,6 +176,8 @@ export class Dashboard implements OnInit {
     }
   }
 
+pqrsEstadoOpts: any = null; // propiedad nueva
+
   private applyResponse(res: any) {
     this.kpis = res.kpis;
     this.overview = res.overview;
@@ -197,6 +201,7 @@ export class Dashboard implements OnInit {
 
     // PQRs
     this.pqrsEstadoData = this.mapPqrsEstado(res.pqrsPorEstado);
+    this.pqrsEstadoOpts = this.makeBarNumberOptions('', 0); //<--
     this.pqrsCat = res.pqrsPorCategoria || [];
     this.pqrsCatPadre = res.pqrsPorCategoriaPadre || [];
   }
@@ -224,19 +229,42 @@ export class Dashboard implements OnInit {
     };
   }
 
-  private makeLineOptions() {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        ySat: { type: 'linear', position: 'left', min: 0, max: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
-        yPqrs: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'PQRs' } },
-        x: { ticks: { autoSkip: true, maxRotation: 0 } }
+  // private makeLineOptions() {
+  //   return {
+  //     responsive: true,
+  //     maintainAspectRatio: false,
+  //     interaction: { mode: 'index', intersect: false },
+  //     plugins: { legend: { position: 'top' } },
+  //     scales: {
+  //       ySat: { type: 'linear', position: 'left', min: 0, max: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
+  //       yPqrs: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'PQRs' } },
+  //       x: { ticks: { autoSkip: true, maxRotation: 0 } }
+  //     }
+  //   };
+  // }
+private makeLineOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      datalabels: {
+        // Mostrar valores en línea y barras con formato distinto
+        align: (ctx:any) => ctx.dataset.type === 'line' ? 'top' : 'end',
+        anchor: (ctx:any) => ctx.dataset.type === 'line' ? 'end' : 'end',
+        offset: (ctx:any) => ctx.dataset.type === 'line' ? 4 : 2,
+        formatter: (v:number, ctx:any) =>
+          ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
       }
-    };
-  }
+    },
+    scales: {
+      ySat: { type: 'linear', position: 'left', min: 0, max: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
+      yPqrs:{ type: 'linear', position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'PQRs' } },
+      x: { ticks: { autoSkip: true, maxRotation: 0 } }
+    }
+  };
+}
 
   private mapDonutData(src: any): any {
     if (!src) return null;
@@ -271,16 +299,32 @@ export class Dashboard implements OnInit {
     return { labels, datasets: [{ data, borderWidth: 1 }] };
   }
 
-  private makeDonutOptions() {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '62%',
-      plugins: {
-        legend: { position: 'top' }
+  // private makeDonutOptions() {
+  //   return {
+  //     responsive: true,
+  //     maintainAspectRatio: false,
+  //     cutout: '62%',
+  //     plugins: {
+  //       legend: { position: 'top' }
+  //     }
+  //   };
+  // }
+private makeDonutOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: {
+      legend: { position: 'top' },
+      datalabels: {
+        color: '#111',
+        font: { weight: '600' },
+        formatter: (value: number, ctx: any) => this.donutPctFormatter(value, ctx),
       }
-    };
-  }
+    }
+  };
+}
+
 
   private mapSegBar(src: any[], labelKey: string, valueKey: string) {
     if (!Array.isArray(src) || !src.length) return null;
@@ -289,24 +333,95 @@ export class Dashboard implements OnInit {
     return { labels, datasets: [{ label: '', data, borderWidth: 1 }] };
   }
 
-  private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
-    const maxByMode = mode === '%' ? 100 : (mode === 'nps' ? 100 : 5);
-    const minByMode = mode === 'nps' ? -100 : 0;
-    return {
-      indexAxis: 'y' as const,
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          min: minByMode, max: maxByMode,
-          grid: { color: 'rgba(0,0,0,.05)' },
-          ticks: { callback: (v: number) => mode === '%' ? `${v}%` : `${v}` }
-        },
-        y: { ticks: { autoSkip: false } }
+  // private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
+  //   const maxByMode = mode === '%' ? 100 : (mode === 'nps' ? 100 : 5);
+  //   const minByMode = mode === 'nps' ? -100 : 0;
+  //   return {
+  //     indexAxis: 'y' as const,
+  //     responsive: true,
+  //     maintainAspectRatio: false,
+  //     scales: {
+  //       x: {
+  //         min: minByMode, max: maxByMode,
+  //         grid: { color: 'rgba(0,0,0,.05)' },
+  //         ticks: { callback: (v: number) => mode === '%' ? `${v}%` : `${v}` }
+  //       },
+  //       y: { ticks: { autoSkip: false } }
+  //     },
+  //     plugins: { legend: { display: false } }
+  //   };
+  // }
+
+//   private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
+//   const maxByMode = mode === '%' ? 100 : (mode === 'nps' ? 100 : 5);
+//   const minByMode = mode === 'nps' ? -100 : 0;
+//   const suffix = mode === '%' ? '%' : '';
+//   const decimals = mode === '1-5' ? 1 : 0;
+
+//   return {
+//     indexAxis: 'y' as const,
+//     responsive: true,
+//     maintainAspectRatio: false,
+//     scales: {
+//       x: {
+//         min: minByMode, max: maxByMode,
+//         grid: { color: 'rgba(0,0,0,.05)' },
+//         ticks: { callback: (v: number) => mode === '%' ? `${v}%` : `${v}` }
+//       },
+//       y: { ticks: { autoSkip: false } }
+//     },
+//     plugins: {
+//       legend: { display: false },
+//       datalabels: {
+//         anchor: 'end',
+//         align: 'end',
+//         offset: 2,
+//         clamp: true,
+//         formatter: (v: number) => `${this.fmtNum(v, decimals)}${suffix}`,
+//       }
+//     }
+//   };
+// }
+
+private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
+  const isPct = mode === '%' || mode === 'nps';
+  const maxByMode = mode === '1-5' ? 5 : 100;
+  const minByMode = mode === 'nps' ? -100 : 0;
+
+  return {
+    indexAxis: 'y' as const,
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        min: minByMode,
+        max: maxByMode,
+        grid: { color: 'rgba(0,0,0,.05)' },
+        ticks: {
+          // ← eje X en % cuando sea NPS o %
+          callback: (v: number) => isPct ? `${v}%` : `${v}`
+        }
       },
-      plugins: { legend: { display: false } }
-    };
-  }
+      y: { ticks: { autoSkip: false } }
+    },
+    plugins: {
+      legend: { display: false },
+      // ← etiquetas visibles y “metidas” en el final de la barra
+      datalabels: {
+        anchor: 'end',
+        align: 'end',
+        offset: -50,        // mueve la etiqueta un poco hacia dentro
+        clamp: true,       // evita que se dibuje fuera del chart area
+        formatter: (val: number) => {
+          if (isPct) return `${val}%`;
+          // para escala 1–5 mostramos 1 decimal si aplica
+          return Number.isFinite(val) ? (Math.round(val * 10) / 10).toString() : `${val}`;
+        }
+      }
+    }
+  };
+}
+
 
   private mapPqrsEstado(src: any[]) {
     if (!Array.isArray(src) || !src.length) return null;
@@ -316,48 +431,98 @@ export class Dashboard implements OnInit {
   }
 
   /* ====== Series (EVOLUCIÓN) ====== */
-  private buildSeriesLineOpts() {
-    this.seriesLineOpts = {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { display: false } },
-        y: { beginAtZero: true, grid: { color: '#eee' } }
-      },
-      plugins: {
-        legend: { display: true, position: 'top' },
-        tooltip: { enabled: true }
-      }
-    };
-  }
+  // private buildSeriesLineOpts() {
+  //   this.seriesLineOpts = {
+  //     responsive: true,
+  //     maintainAspectRatio: false,
+  //     scales: {
+  //       x: { grid: { display: false } },
+  //       y: { beginAtZero: true, grid: { color: '#eee' } }
+  //     },
+  //     plugins: {
+  //       legend: { display: true, position: 'top' },
+  //       tooltip: { enabled: true }
+  //     }
+  //   };
+  // }
 
-  private buildSeriesMixOpts() {
-    this.seriesMixOpts = {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { display: false } },
-        y: {
-          type: 'linear',
-          position: 'left',
-          suggestedMin: 0,
-          suggestedMax: 5,
-          title: { display: true, text: 'Satisfacción (1–5)' }
+  // private buildSeriesMixOpts() {
+  //   this.seriesMixOpts = {
+  //     responsive: true,
+  //     maintainAspectRatio: false,
+  //     scales: {
+  //       x: { grid: { display: false } },
+  //       y: {
+  //         type: 'linear',
+  //         position: 'left',
+  //         suggestedMin: 0,
+  //         suggestedMax: 5,
+  //         title: { display: true, text: 'Satisfacción (1–5)' }
+  //       },
+  //       y1: {
+  //         type: 'linear',
+  //         position: 'right',
+  //         beginAtZero: true,
+  //         grid: { drawOnChartArea: false },
+  //         title: { display: true, text: 'PQRs' }
+  //       }
+  //     },
+  //     plugins: {
+  //       legend: { position: 'top' },
+  //       tooltip: { enabled: true }
+  //     }
+  //   };
+  // }
+private buildSeriesLineOpts() {
+  this.seriesLineOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: '#eee' } }
+    },
+    plugins: {
+      legend: { display: true, position: 'top' },
+      tooltip: { enabled: true },
+      datalabels: {
+        align: 'top',
+        anchor: 'end',
+        offset: 4,
+        formatter: (v:number, ctx:any) => {
+          // Etiquetas “bonitas” según serie:
+          const label = (ctx?.dataset?.label || '').toLowerCase();
+          if (label.includes('csat')) return `${this.fmtNum(v, 0)}%`;
+          if (label.includes('nps'))  return this.fmtNum(v, 0);
+          if (label.includes('ces'))  return this.fmtNum(v, 1);
+          return this.fmtNum(v, 0);
         },
-        y1: {
-          type: 'linear',
-          position: 'right',
-          beginAtZero: true,
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: 'PQRs' }
-        }
-      },
-      plugins: {
-        legend: { position: 'top' },
-        tooltip: { enabled: true }
       }
-    };
-  }
+    }
+  };
+}
+
+private buildSeriesMixOpts() {
+  this.seriesMixOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false } },
+      y:  { type: 'linear', position: 'left',  suggestedMin: 0, suggestedMax: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
+      y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'PQRs' } }
+    },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: { enabled: true },
+      datalabels: {
+        align: (ctx:any) => ctx.dataset.type === 'line' ? 'top' : 'end',
+        anchor: 'end',
+        offset: (ctx:any) => ctx.dataset.type === 'line' ? 4 : 2,
+        formatter: (v:number, ctx:any) =>
+          ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
+      }
+    }
+  };
+}
 
   private toLineDataset(rows: Array<{ periodo: string; valor: number }>, label: string) {
     const labels = rows.map(r => r.periodo);
@@ -416,4 +581,37 @@ export class Dashboard implements OnInit {
     const arr = this.donutData?.datasets?.[0]?.data as any[] | undefined;
     return Array.isArray(arr) && arr.some(v => Number(v) > 0);
   }
+
+
+// ===== Helpers de datalabels =====
+private fmtNum = (v: any, dec = 0) =>
+  (typeof v === 'number' && isFinite(v)) ? v.toFixed(dec) : '';
+
+/** Para DONUT: porcentaje de cada porción */
+private donutPctFormatter = (value: number, ctx: any) => {
+  const ds = ctx.chart.data.datasets[0];
+  const total = (ds?.data as number[]).reduce((a, b) => a + (+b || 0), 0) || 1;
+  const pct = (value * 100) / total;
+  return `${pct.toFixed(0)}%`;
+};
+
+/** Datalabels base para barras horizontales/verticales */
+private makeBarNumberOptions(suffix = '', decimals = 0) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end',
+        align: 'end',
+        offset: 2,
+        clamp: true,
+        formatter: (v: number) => `${this.fmtNum(v, decimals)}${suffix}`,
+      }
+    }
+  };
+}
+
+
 }
