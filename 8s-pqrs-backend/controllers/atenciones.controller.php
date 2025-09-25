@@ -267,23 +267,23 @@ switch ($_GET["op"] ?? '') {
             //     echo json_encode(["success"=>false, "message"=>"Faltan parámetros requeridos"]);
             //     break;
             // }
-// Validación mínima (el SP valida más cosas)
-$req = ['cedula','nombres','apellidos','idAgencia','fechaAtencion','numeroDocumento','tipoDocumento'];
-$faltan = [];
-foreach ($req as $r) {
-  $v = param($r, null);
-  if ($v === null || $v === '') $faltan[] = $r;
-}
+            // Validación mínima (el SP valida más cosas)
+            $req = ['cedula','nombres','apellidos','idAgencia','fechaAtencion','numeroDocumento','tipoDocumento'];
+            $faltan = [];
+            foreach ($req as $r) {
+            $v = param($r, null);
+            if ($v === null || $v === '') $faltan[] = $r;
+            }
 
-if (!empty($faltan)) {
-  http_response_code(400);
-  echo json_encode([
-    "success" => false,
-    "message" => "Faltan parámetros requeridos",
-    "missing" => $faltan
-  ]);
-  break;
-}
+            if (!empty($faltan)) {
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "Faltan parámetros requeridos",
+                "missing" => $faltan
+            ]);
+            break;
+            }
 
             $res = $atenciones->upsertClienteYAtencion(
                 $idClienteErp,
@@ -327,7 +327,7 @@ if (!empty($faltan)) {
             http_response_code($status);
             echo json_encode(["success"=>false, "message"=>"No se pudo procesar el upsert", "error"=>$res]);
             break;
-}
+            }
 
 
             $payload = [
@@ -337,11 +337,52 @@ if (!empty($faltan)) {
             ];
             if (isset($res['idAsesor'])) { $payload['idAsesor'] = $res['idAsesor']; }
 
+            // // Si pidieron programar automáticamente y tenemos idAtencion válido
+            // if ($programarAuto && !empty($res['idAtencion']) && !empty($canalEnvio)) {
+            //     $prog = $atenciones->programarDespuesDeUpsertAuto($res['idAtencion'], $canalEnvio);
+            //     if (is_array($prog)) {
+            //         $payload['idProgEncuesta'] = $prog['idProgEncuesta'];
+            //     } else {
+            //         $payload['programarError'] = $prog; // no rompe el upsert
+            //     }
+            // }
+
+            // echo json_encode($payload);
+
             // Si pidieron programar automáticamente y tenemos idAtencion válido
             if ($programarAuto && !empty($res['idAtencion']) && !empty($canalEnvio)) {
                 $prog = $atenciones->programarDespuesDeUpsertAuto($res['idAtencion'], $canalEnvio);
                 if (is_array($prog)) {
                     $payload['idProgEncuesta'] = $prog['idProgEncuesta'];
+
+                    // >>>>>> ENVÍO DE CORREO SI EL CANAL ES EMAIL <<<<<<
+                    if (
+                        strtoupper((string)$canalEnvio) === 'EMAIL' &&
+                        !empty($email) &&
+                        filter_var($email, FILTER_VALIDATE_EMAIL)
+                    ) {
+                        // reutiliza tu helper (está en el mismo directorio /controllers)
+                        require_once(__DIR__ . '/email.controller.php');
+
+                        $nombreCompleto = trim($nombres . ' ' . $apellidos);
+
+                        // Opción A: el front te manda el link por body como 'linkEncuesta'
+                        // Opción B: aquí lo construyes en base a idProgEncuesta / idAtencion
+                        $linkEncuesta = param('linkEncuesta', '#');
+
+                        $mailRes = enviarEmailEncuestaProgramada(
+                            $email,
+                            $nombreCompleto,
+                            $res['idAtencion'],
+                            $fechaAtencion,
+                            $linkEncuesta
+                        );
+
+                        // no rompas el flujo por el correo; solo anótalo
+                        $payload['emailStatus'] = ($mailRes === 'ok') ? 'sent' : ('error: ' . $mailRes);
+                    }
+                    // <<<<<< FIN ENVÍO EMAIL <<<<<<
+
                 } else {
                     $payload['programarError'] = $prog; // no rompe el upsert
                 }
@@ -349,30 +390,90 @@ if (!empty($faltan)) {
 
             echo json_encode($payload);
 
+
         } catch (Throwable $e) {
             http_response_code(500);
             echo json_encode(["success"=>false, "message"=>"Ocurrió un error inesperado", "error"=>$e->getMessage()]);
         }
         break;
 
-    // === PROGRAMAR DESPUÉS DE UPSERT (SP directo) ===
-    case 'programar_auto':
-        header('Content-Type: application/json; charset=utf-8');
-        $idAtencion = filter_var(param('idAtencion', null), FILTER_VALIDATE_INT);
-        $canalEnvio = (string) param('canalEnvio', '');
-        if (!$idAtencion || $canalEnvio==='') {
-            http_response_code(400);
-            echo json_encode(["success"=>false, "message"=>"Parámetros requeridos: idAtencion, canalEnvio"]);
+    // // === PROGRAMAR DESPUÉS DE UPSERT (SP directo) ===
+    // case 'programar_auto':
+    //     header('Content-Type: application/json; charset=utf-8');
+    //     $idAtencion = filter_var(param('idAtencion', null), FILTER_VALIDATE_INT);
+    //     $canalEnvio = (string) param('canalEnvio', '');
+    //     if (!$idAtencion || $canalEnvio==='') {
+    //         http_response_code(400);
+    //         echo json_encode(["success"=>false, "message"=>"Parámetros requeridos: idAtencion, canalEnvio"]);
+    //         break;
+    //     }
+    //     $res = $atenciones->programarDespuesDeUpsertAuto($idAtencion, $canalEnvio);
+    //     if (is_array($res)) {
+    //         echo json_encode(["success"=>true, "idProgEncuesta"=>$res['idProgEncuesta']]);
+    //     } else {
+    //         http_response_code(400);
+    //         echo json_encode(["success"=>false, "message"=>"No se pudo programar la encuesta", "error"=>$res]);
+    //     }
+    //     break;
+        // === PROGRAMAR DESPUÉS DE UPSERT (SP directo) ===
+        case 'programar_auto':
+            header('Content-Type: application/json; charset=utf-8');
+
+            $idAtencion = filter_var(param('idAtencion', null), FILTER_VALIDATE_INT);
+            $canalEnvio = (string) param('canalEnvio', '');
+            if (!$idAtencion || $canalEnvio==='') {
+                http_response_code(400);
+                echo json_encode(["success"=>false, "message"=>"Parámetros requeridos: idAtencion, canalEnvio"]);
+                break;
+            }
+
+            $resProg = $atenciones->programarDespuesDeUpsertAuto($idAtencion, $canalEnvio);
+            if (!is_array($resProg)) {
+                http_response_code(400);
+                echo json_encode(["success"=>false, "message"=>"No se pudo programar la encuesta", "error"=>$resProg]);
+                break;
+            }
+
+            // Armamos respuesta base
+            $payload = ["success"=>true, "idProgEncuesta"=>$resProg['idProgEncuesta']];
+
+            // >>>>>> ENVÍO DE CORREO SI EL CANAL ES EMAIL <<<<<<
+            if (strtoupper($canalEnvio) === 'EMAIL') {
+                // Trae datos de la atención/cliente
+                $row = $atenciones->uno($idAtencion);
+                // row trae: a.*, c.nombres, c.apellidos, c.email, ag.nombre, etc.
+                $email          = trim((string)($row['email'] ?? ''));
+                $nombres        = trim((string)($row['nombres'] ?? ''));
+                $apellidos      = trim((string)($row['apellidos'] ?? ''));
+                $fechaAtencion  = (string)($row['fechaAtencion'] ?? '');
+
+                if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    require_once(__DIR__ . '/email.controller.php');
+
+                    $nombreCompleto = trim($nombres . ' ' . $apellidos);
+
+                    // Puedes recibirlo del front como parámetro o construirlo aquí
+                    // (de momento dejamos opcional, cae en '#')
+                    $linkEncuesta = param('linkEncuesta', '#');
+
+                    $mailRes = enviarEmailEncuestaProgramada(
+                        $email,
+                        $nombreCompleto,
+                        $idAtencion,
+                        $fechaAtencion,
+                        $linkEncuesta
+                    );
+
+                    $payload['emailStatus'] = ($mailRes === 'ok') ? 'sent' : ('error: ' . $mailRes);
+                } else {
+                    $payload['emailStatus'] = 'skip: email inválido o vacío';
+                }
+            }
+            // <<<<<< FIN ENVÍO EMAIL <<<<<<
+
+            echo json_encode($payload);
             break;
-        }
-        $res = $atenciones->programarDespuesDeUpsertAuto($idAtencion, $canalEnvio);
-        if (is_array($res)) {
-            echo json_encode(["success"=>true, "idProgEncuesta"=>$res['idProgEncuesta']]);
-        } else {
-            http_response_code(400);
-            echo json_encode(["success"=>false, "message"=>"No se pudo programar la encuesta", "error"=>$res]);
-        }
-        break;
+
 
 
         case 'validar_asesor':
