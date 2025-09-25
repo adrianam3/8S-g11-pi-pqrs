@@ -258,7 +258,9 @@ switch ($_GET["op"] ?? '') {
             $cedulaAsesor    = param('cedulaAsesor', null);
 
             // Programación automática (opcional)
-            $programarAuto   = (bool) (param('programarAuto', false));
+            // $programarAuto   = (bool) (param('programarAuto', false));
+            // antes de usar $programarAuto:
+            $programarAuto = filter_var(param('programarAuto', false), FILTER_VALIDATE_BOOLEAN);
             $canalEnvio      = param('canalEnvio', null); // EMAIL|WHATSAPP|SMS|OTRO
 
             // Validación mínima (el SP valida más cosas)
@@ -314,7 +316,10 @@ switch ($_GET["op"] ?? '') {
             if (!is_array($res)) {
             // Si el SP hizo SIGNAL (1644), en $res viene el texto como 'La cédula del asesor...'
             $status = 500;
-            $msgLower = is_string($res) ? mb_strtolower($res, 'UTF-8') : '';
+            // $msgLower = is_string($res) ? mb_strtolower($res, 'UTF-8') : '';
+            $msgLower = is_string($res) 
+                ? (function($s){ return function_exists('mb_strtolower') ? mb_strtolower($s,'UTF-8') : strtolower($s); })($res)
+                : '';
 
             if (is_string($res) && (
                 strpos($msgLower, 'sqlstate') !== false ||
