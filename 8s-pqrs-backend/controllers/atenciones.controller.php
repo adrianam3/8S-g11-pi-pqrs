@@ -3,6 +3,8 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
 header("Allow: GET, POST, OPTIONS, PUT, DELETE");
+header('Content-Type: application/json; charset=utf-8');
+
 $method = $_SERVER["REQUEST_METHOD"] ?? 'GET';
 if ($method === "OPTIONS") { die(); }
 
@@ -13,20 +15,76 @@ error_reporting(0);
 
 $atenciones = new Atenciones();
 
-// Helpers
-function read_json_body(): array {
-    $raw = file_get_contents('php://input');
-    if (!$raw) return [];
-    $j = json_decode($raw, true);
-    return is_array($j) ? $j : [];
+// // Helpers
+// function read_json_body(): array {
+//     $raw = file_get_contents('php://input');
+//     if (!$raw) return [];
+//     $j = json_decode($raw, true);
+//     return is_array($j) ? $j : [];
+// }
+// function param($key, $default=null) {
+//     $json = read_json_body();
+//     if (isset($_POST[$key])) return $_POST[$key];
+//     if (isset($_GET[$key]))  return $_GET[$key];
+//     if (isset($json[$key]))  return $json[$key];
+//     return $default;
+// }
+
+// /* =========================
+//    Helpers (arreglados)
+//    ========================= */
+// $__JSON_INPUT__ = null;  // <-- cache global
+
+// function get_json_cached(): array {
+//     // Usa la variable global para no releer php://input
+//     static $cached = null;
+//     if ($cached !== null) return $cached;
+
+//     $raw = file_get_contents('php://input');
+//     if (!$raw) { $cached = []; return $cached; }
+
+//     $j = json_decode($raw, true);
+//     $cached = is_array($j) ? $j : [];
+//     return $cached;
+// }
+
+// function param($key, $default=null) {
+//     // Orden de precedencia: POST -> GET -> JSON (caché)
+//     if (isset($_POST[$key])) return $_POST[$key];
+//     if (isset($_GET[$key]))  return $_GET[$key];
+
+//     $json = get_json_cached();
+//     if (array_key_exists($key, $json)) return $json[$key];
+
+//     return $default;
+// }
+
+/* =========================
+   Helpers (cachean php://input)
+   ========================= */
+function get_json_cached(): array {
+  static $cached = null;
+  if ($cached !== null) return $cached;
+
+  $raw = file_get_contents('php://input');        // <-- se lee UNA sola vez
+  if (!$raw) { $cached = []; return $cached; }
+
+  $j = json_decode($raw, true);
+  $cached = is_array($j) ? $j : [];
+  return $cached;
 }
+
+/** Orden de precedencia: POST -> GET -> JSON */
 function param($key, $default=null) {
-    $json = read_json_body();
-    if (isset($_POST[$key])) return $_POST[$key];
-    if (isset($_GET[$key]))  return $_GET[$key];
-    if (isset($json[$key]))  return $json[$key];
-    return $default;
+  if (isset($_POST[$key])) return $_POST[$key];
+  if (isset($_GET[$key]))  return $_GET[$key];
+
+  $json = get_json_cached();                      // <-- reutiliza caché
+  if (array_key_exists($key, $json)) return $json[$key];
+
+  return $default;
 }
+
 
 switch ($_GET["op"] ?? '') {
 
@@ -204,11 +262,28 @@ switch ($_GET["op"] ?? '') {
             $canalEnvio      = param('canalEnvio', null); // EMAIL|WHATSAPP|SMS|OTRO
 
             // Validación mínima (el SP valida más cosas)
-            if ($cedula==='' || $nombres==='' || $apellidos==='' || !$idAgencia || $fechaAtencion==='' || $numeroDocumento==='' || $tipoDocumento==='') {
-                http_response_code(400);
-                echo json_encode(["success"=>false, "message"=>"Faltan parámetros requeridos"]);
-                break;
-            }
+            // if ($cedula==='' || $nombres==='' || $apellidos==='' || !$idAgencia || $fechaAtencion==='' || $numeroDocumento==='' || $tipoDocumento==='') {
+            //     http_response_code(400);
+            //     echo json_encode(["success"=>false, "message"=>"Faltan parámetros requeridos"]);
+            //     break;
+            // }
+// Validación mínima (el SP valida más cosas)
+$req = ['cedula','nombres','apellidos','idAgencia','fechaAtencion','numeroDocumento','tipoDocumento'];
+$faltan = [];
+foreach ($req as $r) {
+  $v = param($r, null);
+  if ($v === null || $v === '') $faltan[] = $r;
+}
+
+if (!empty($faltan)) {
+  http_response_code(400);
+  echo json_encode([
+    "success" => false,
+    "message" => "Faltan parámetros requeridos",
+    "missing" => $faltan
+  ]);
+  break;
+}
 
             $res = $atenciones->upsertClienteYAtencion(
                 $idClienteErp,
@@ -228,13 +303,32 @@ switch ($_GET["op"] ?? '') {
                 $cedulaAsesor // NUEVO
             );
 
+            // if (!is_array($res)) {
+            //     $status = 500;
+            //     if (is_string($res) && (stripos($res, 'idCanal no existe') !== false || stripos($res, 'asesor') !== false)) { $status = 400; }
+            //     http_response_code($status);
+            //     echo json_encode(["success"=>false, "message"=>"No se pudo procesar el upsert", "error"=>$res]);
+            //     break;
+            // }
+
             if (!is_array($res)) {
-                $status = 500;
-                if (is_string($res) && (stripos($res, 'idCanal no existe') !== false || stripos($res, 'asesor') !== false)) { $status = 400; }
-                http_response_code($status);
-                echo json_encode(["success"=>false, "message"=>"No se pudo procesar el upsert", "error"=>$res]);
-                break;
+            // Si el SP hizo SIGNAL (1644), en $res viene el texto como 'La cédula del asesor...'
+            $status = 500;
+            $msgLower = is_string($res) ? mb_strtolower($res, 'UTF-8') : '';
+
+            if (is_string($res) && (
+                strpos($msgLower, 'sqlstate') !== false ||
+                strpos($msgLower, 'la cédula del asesor') !== false ||
+                strpos($msgLower, 'idcanal no existe') !== false
+            )) {
+                $status = 400;
             }
+
+            http_response_code($status);
+            echo json_encode(["success"=>false, "message"=>"No se pudo procesar el upsert", "error"=>$res]);
+            break;
+}
+
 
             $payload = [
                 "success"     => true,
@@ -279,6 +373,29 @@ switch ($_GET["op"] ?? '') {
             echo json_encode(["success"=>false, "message"=>"No se pudo programar la encuesta", "error"=>$res]);
         }
         break;
+
+
+        case 'validar_asesor':
+        header('Content-Type: application/json; charset=utf-8');
+        $ced = trim((string) param('cedulaAsesor', ''));
+        if ($ced === '') {
+            http_response_code(400);
+            echo json_encode(["success"=>false, "message"=>"Parámetro requerido: cedulaAsesor"]);
+            break;
+        }
+        $row = $atenciones->validarAsesorPorCedula($ced);
+        if ($row) {
+            echo json_encode([
+                "success"=>true, "exists"=>true,
+                "idAsesor"=>(int)$row['idAsesor'],
+                "nombres"=>$row['nombres'], "apellidos"=>$row['apellidos'], "email"=>$row['email']
+            ]);
+        } else {
+            http_response_code(404);
+            echo json_encode(["success"=>false, "exists"=>false, "message"=>"La cédula del asesor no corresponde a ningún usuario"]);
+        }
+        break;
+
 
     default:
         http_response_code(400);

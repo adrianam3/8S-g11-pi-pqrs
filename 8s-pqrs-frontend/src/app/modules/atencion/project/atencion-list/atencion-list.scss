@@ -1,0 +1,23 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.mr-2 { margin-right: .5rem; }
+
+:host ::ng-deep .p-progressbar {
+  height: 8px;
+  border-radius: 999px;
+}
+
+:host ::ng-deep .p-table .p-datatable-thead > tr > th {
+  text-align: center;
+}
+
+:host ::ng-deep .p-table .p-datatable-tbody > tr > td {
+  text-align: center;
+  vertical-align: middle;
+}

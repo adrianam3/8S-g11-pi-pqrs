@@ -396,11 +396,27 @@ class Atenciones
                 $cedulaAsesorEnc // s (ENCRIPTADA o null)
             );
 
+            // if (!$stmt->execute()) {
+            //     $err = $stmt->error;
+            //     $stmt->close(); $con->close();
+            //     return $err ?: 'Error al ejecutar el procedimiento.';
+            // }
             if (!$stmt->execute()) {
-                $err = $stmt->error;
+                // MySQL SIGNAL -> errno 1644; extrae mensaje legible
+                $errNo  = $stmt->errno;
+                $errMsg = $stmt->error;
+
                 $stmt->close(); $con->close();
-                return $err ?: 'Error al ejecutar el procedimiento.';
-            }
+
+                // Normaliza mensaje cuando hay multiple resultsets y el driver no popula error
+                if ($errNo === 0 && stripos($errMsg, 'No result set') !== false) {
+                    $errNo = 1644;
+                    $errMsg = 'Error de aplicación';
+                }
+
+    // Devuelve tal cual; el controller mapeará a 400
+    return $errNo === 1644 ? $errMsg : ($errMsg ?: 'Error al ejecutar el procedimiento.');
+}
 
             // SELECT final del SP ahora incluye idCliente, idAtencion, idAsesor
             $out = null;
@@ -475,4 +491,40 @@ class Atenciones
             return $e->getMessage();
         }
     }
+    public function validarAsesorPorCedula($cedulaAsesor) {
+        try {
+            if (is_null($cedulaAsesor) || $cedulaAsesor === '') return null;
+
+            $conObj = new ClaseConectar();
+            $con = $conObj->ProcedimientoParaConectar();
+
+            // cifrar igual que en upsert
+            $p = new Personas();
+            $enc = $p->encrypt($cedulaAsesor);
+
+            // misma lógica que el SP: pe.cedula = (encriptada), y resolver a usuarios
+            $sql = "SELECT u.idUsuario AS idAsesor, pe.nombres, pe.apellidos, pe.email
+                    FROM usuarios u
+                    JOIN personas pe ON pe.idPersona = u.idPersona
+                    WHERE pe.cedula = ?
+                ORDER BY u.estado DESC, u.fechaActualizacion DESC, u.fechaCreacion DESC
+                    LIMIT 1";
+
+            $stmt = $con->prepare($sql);
+            if (!$stmt) { $con->close(); return null; }
+
+            $stmt->bind_param('s', $enc);
+            if (!$stmt->execute()) { $stmt->close(); $con->close(); return null; }
+
+            $res = $stmt->get_result();
+            $row = $res->fetch_assoc();
+
+            $stmt->close(); $con->close();
+            return $row ?: null;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    
 }

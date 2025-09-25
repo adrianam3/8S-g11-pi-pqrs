@@ -1,74 +1,120 @@
+<p-toast></p-toast>
 
 <div class="card card-w-title">
+
+  <!-- Toolbar superior -->
+  <div class="toolbar surface-card shadow-1 border-round">
+    <div class="left flex align-items-center gap-2">
+      <!-- Descargar PLANTILLA -->
+      <a
+        pButton
+        class="p-button-outlined"
+        href="assets/atenciones_import_plantilla.xlsx"
+        download="atenciones_import_plantilla.xlsx"
+        label="Descargar plantilla"
+        icon="pi pi-download">
+      </a>
+
+      <!-- Importar EXCEL -->
+      <button pButton label="Importar Excel" icon="pi pi-upload" (click)="triggerFilePicker()"></button>
+      <input id="excelInput" type="file" accept=".xlsx,.xls" (change)="onFileChange($event)" hidden>
+    </div>
+
+    <div class="right" *ngIf="importing">
+      <span class="mr-2">Importando... {{progress}}% (OK: {{okCount}} · Err: {{errCount}})</span>
+      <p-progressBar [value]="progress" [showValue]="false" style="width:240px"></p-progressBar>
+    </div>
+  </div>
+
 </div>
 
-    <p-table #dt [value]="atencionesAll" dataKey="idAtencion" [rows]="10" [loading]="loading" [rowHover]="true"
-        [showGridlines]="true" [paginator]="true"
-        [globalFilterFields]="['numeroDocumento','numeroFactura','fechaAtencion','clienteNombres','clienteApellidos','clienteCedula','clienteEmail']"
-        [tableStyle]="{ 'min-width': '90rem' }"
-        currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros."
-        [showCurrentPageReport]="true">
+<p-table
+  #dt
+  [value]="atencionesAll"
+  dataKey="idAtencion"
+  [rows]="10"
+  [loading]="loading"
+  [rowHover]="true"
+  [showGridlines]="true"
+  [paginator]="true"
+  [globalFilterFields]="['numeroDocumento','numeroFactura','fechaAtencion','nombres','apellidos','cedula','email','nombreAgencia']"
+  [tableStyle]="{ 'min-width': '90rem' }"
+  currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros."
+  [showCurrentPageReport]="true">
 
-        <ng-template #caption>
-            <div class="flex justify-content-between flex-column sm:flex-row">
-                <button pButton label="Borrar Filtros" class="p-button-outlined mb-2" icon="pi pi-filter-slash"
-                    (click)="clearFilter()"></button>
-                <p-iconfield iconPosition="left" class="ml-auto">
-                    <p-inputicon>
-                        <i class="pi pi-search"></i>
-                    </p-inputicon>
-                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar" />
-                </p-iconfield>
-            </div>
-        </ng-template>
+  <!-- CAPTION -->
+  <ng-template pTemplate="caption">
+    <div class="flex justify-content-between flex-column sm:flex-row">
+      <button
+        pButton
+        label="Borrar Filtros"
+        class="p-button-outlined mb-2"
+        icon="pi pi-filter-slash"
+        (click)="clearFilter()">
+      </button>
 
-        <ng-template #header>
-            <tr>
-                <th style="min-width: 3rem"> </th>
-                <th style="min-width: 12rem">Fecha Atención</th>
-                <th style="min-width: 12rem">Tipo Documento</th>
-                <th style="min-width: 12rem"># Documento</th>
-                <th style="min-width: 12rem"># Factura</th>
-                <th style="min-width: 15rem">Nombres Cliente</th>
-                <th style="min-width: 15rem">Apellidos Cliente</th>
-                <th style="min-width: 15rem">Cédula</th>
-                <th style="min-width: 15rem">Email</th>
-                <th style="min-width: 10rem">Estado</th>
-                <th style="min-width: 10rem">Agencia</th>
-                <th style="min-width: 12rem">Acciones</th>
-            </tr>
-        </ng-template>
+      <p-iconfield iconPosition="left" class="ml-auto">
+        <p-inputicon>
+          <i class="pi pi-search"></i>
+        </p-inputicon>
+        <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar" />
+      </p-iconfield>
+    </div>
+  </ng-template>
 
-        <ng-template pTemplate="body" let-rowData>
-            <tr>
-                <td style="text-align: center;">
-                    <button pButton icon="pi pi-eye" [rounded]="true" [outlined]="true" severity="info"
-                        (click)="verDetalle(rowData)" pTooltip="Ver Detalle"></button>
-                </td>
-                <td style="text-align: center;">{{ rowData.fechaAtencion }}</td>
-                <td style="text-align: center;">{{ rowData.tipoDocumento }}</td>
-                <td style="text-align: center;">{{ rowData.numeroDocumento }}</td>
-                <td style="text-align: center;">{{ rowData.numeroFactura }}</td>
-                <td style="text-align: center;">{{ rowData.clienteNombres }}</td>
-                <td style="text-align: center;">{{ rowData.clienteApellidos }}</td>
-                <td style="text-align: center;">{{ rowData.clienteCedula }}</td>
-                <td style="text-align: center;">{{ rowData.clienteEmail }}</td>
-                <td style="text-align: center;">
-                    <span [ngClass]="{
-                    'text-green-500': rowData.estado == 1,
-                    'text-red-500': rowData.estado == 0
-                }">
-                        {{ rowData.estado == 1 ? 'Activa' : 'Inactiva' }}
-                    </span>
-                </td>
-                <td style="text-align: center;">{{ rowData.nombreAgencia }}</td>
-                <td style="text-align: center;">
-                    <button pButton icon="pi pi-pencil" [rounded]="true" [outlined]="true" severity="success"
-                        (click)="editarAtencion(rowData)" pTooltip="Editar"></button>
-                    <button pButton icon="pi pi-trash" [rounded]="true" [outlined]="true" severity="danger"
-                        (click)="eliminarAtencion(rowData)" pTooltip="Eliminar"></button>
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
-<!-- </div> -->
+  <!-- HEADER -->
+  <ng-template pTemplate="header">
+    <tr>
+      <th style="min-width: 3rem"></th>
+      <th style="min-width: 12rem">Fecha Atención</th>
+      <th style="min-width: 12rem">Tipo Documento</th>
+      <th style="min-width: 12rem"># Documento</th>
+      <th style="min-width: 12rem"># Factura</th>
+      <th style="min-width: 15rem">Nombres Cliente</th>
+      <th style="min-width: 15rem">Apellidos Cliente</th>
+      <th style="min-width: 15rem">Cédula</th>
+      <th style="min-width: 15rem">Email</th>
+      <th style="min-width: 10rem">Estado</th>
+      <th style="min-width: 10rem">Agencia</th>
+      <th style="min-width: 12rem">Acciones</th>
+    </tr>
+  </ng-template>
+
+  <!-- BODY -->
+  <ng-template pTemplate="body" let-rowData>
+    <tr>
+      <td style="text-align: center;">
+        <button pButton icon="pi pi-eye" [rounded]="true" [outlined]="true" severity="info"
+          (click)="verDetalle(rowData)" pTooltip="Ver Detalle"></button>
+      </td>
+
+      <td style="text-align: center;">{{ rowData.fechaAtencion }}</td>
+      <td style="text-align: center;">{{ rowData.tipoDocumento }}</td>
+      <td style="text-align: center;">{{ rowData.numeroDocumento }}</td>
+      <td style="text-align: center;">{{ rowData.numeroFactura }}</td>
+
+      <!-- Campos corregidos según respuesta del backend -->
+      <td style="text-align: center;">{{ rowData.nombres }}</td>
+      <td style="text-align: center;">{{ rowData.apellidos }}</td>
+      <td style="text-align: center;">{{ rowData.cedula }}</td>
+      <td style="text-align: center;">{{ rowData.email }}</td>
+
+      <td style="text-align: center;">
+        <span [ngClass]="{
+          'text-green-500': rowData.estado == 1,
+          'text-red-500': rowData.estado == 0
+        }">
+          {{ rowData.estado == 1 ? 'Activa' : 'Inactiva' }}
+        </span>
+      </td>
+
+      <td style="text-align: center;">{{ rowData.nombreAgencia }}</td>
+      <td style="text-align: center;">
+        <button pButton icon="pi pi-pencil" [rounded]="true" [outlined]="true" severity="success"
+          (click)="editarAtencion(rowData)" pTooltip="Editar"></button>
+        <button pButton icon="pi pi-trash" [rounded]="true" [outlined]="true" severity="danger"
+          (click)="eliminarAtencion(rowData)" pTooltip="Eliminar"></button>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
