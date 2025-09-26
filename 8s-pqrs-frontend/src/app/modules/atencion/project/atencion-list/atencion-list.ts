@@ -577,4 +577,105 @@ export class AtencionList implements OnInit {
         });
     }
 
+    // async enviarEncuesta(row: any) {
+    //     // idAtencion viene del listado
+    //     const idAtencion = Number(row?.idAtencion || row?.idatencion);
+    //     if (!idAtencion) {
+    //         this.messageService.add({
+    //             severity: 'error',
+    //             summary: 'Sin idAtención',
+    //             detail: 'No se pudo detectar el ID de la atención.',
+    //         });
+    //         return;
+    //     }
+
+    //     try {
+    //         // Llamamos al backend para programar y enviar por EMAIL
+    //         const res: any = await firstValueFrom(
+    //             this.atencionesService.programarAuto(idAtencion, 'EMAIL')
+    //         );
+
+    //         if (res?.success && res?.idProgEncuesta) {
+    //             const idProg = res.idProgEncuesta;
+
+    //             // construimos el link para mostrarlo al usuario (y que coincide con el que se envía)
+    //             // Quieres exactamente: http://localhost:4200/encuesta-cliente/enc/{idProg}
+    //             // Si prefieres que sea dinámico, usa window.location.origin en vez del host fijo.
+    //             const baseFront = 'http://localhost:4200';
+    //             const link = `${baseFront}/encuesta-cliente/enc/${idProg}`;
+
+    //             // (opcional) lo copiamos al portapapeles para mayor comodidad
+    //             try { await navigator.clipboard.writeText(link); } catch { }
+
+    //             this.messageService.add({
+    //                 severity: 'success',
+    //                 summary: 'Encuesta programada',
+    //                 detail: `Se envió por email. Link: ${link}`,
+    //                 life: 6000
+    //             });
+    //         } else {
+    //             const msg = res?.message || 'No se pudo programar la encuesta';
+    //             this.messageService.add({
+    //                 severity: 'error',
+    //                 summary: 'Error',
+    //                 detail: msg
+    //             });
+    //         }
+    //     } catch (e: any) {
+    //         const msg = e?.error?.message || e?.message || 'Fallo al programar';
+    //         this.messageService.add({
+    //             severity: 'error',
+    //             summary: 'Error',
+    //             detail: msg
+    //         });
+    //         console.error('programar_auto error', e);
+    //     }
+    // }
+
+    // Dentro de la clase AtencionList
+    async enviarEncuesta(row: any) {
+        const idAtencion = Number(row?.idAtencion || row?.idatencion);
+        if (!idAtencion) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Sin ID',
+                detail: 'No se encontró idAtencion en la fila.'
+            });
+            return;
+        }
+
+        try {
+            const res: any = await firstValueFrom(
+                this.atencionesService.programarAuto(idAtencion, 'EMAIL')
+            );
+
+            if (res?.success && res?.idProgEncuesta) {
+                const link = `http://localhost:4200/encuesta-cliente/enc/${res.idProgEncuesta}`;
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Encuesta programada',
+                    detail: `Se envió el correo. Link: ${link}`
+                });
+                // Si quieres, copia al portapapeles:
+                try { await navigator.clipboard.writeText(link); } catch { }
+            } else {
+                const msg = res?.message || res?.error || 'No se pudo programar';
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Sin programar',
+                    detail: msg
+                });
+            }
+        } catch (e: any) {
+            const msg = e?.error?.message || e?.message || 'Error inesperado';
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error al programar',
+                detail: msg
+            });
+            console.error('programar_auto error:', e);
+        }
+    }
+
+
 }

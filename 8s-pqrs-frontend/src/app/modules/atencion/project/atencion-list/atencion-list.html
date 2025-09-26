@@ -6,13 +6,8 @@
   <div class="toolbar surface-card shadow-1 border-round">
     <div class="left flex align-items-center gap-2">
       <!-- Descargar PLANTILLA -->
-      <a
-        pButton
-        class="p-button-outlined"
-        href="assets/atenciones_import_plantilla.xlsx"
-        download="atenciones_import_plantilla.xlsx"
-        label="Descargar plantilla"
-        icon="pi pi-download">
+      <a pButton class="p-button-outlined" href="assets/atenciones_import_plantilla.xlsx"
+        download="atenciones_import_plantilla.xlsx" label="Descargar plantilla" icon="pi pi-download">
       </a>
 
       <!-- Importar EXCEL -->
@@ -28,28 +23,16 @@
 
 </div>
 
-<p-table
-  #dt
-  [value]="atencionesAll"
-  dataKey="idAtencion"
-  [rows]="10"
-  [loading]="loading"
-  [rowHover]="true"
-  [showGridlines]="true"
-  [paginator]="true"
+<p-table #dt [value]="atencionesAll" dataKey="idAtencion" [rows]="10" [loading]="loading" [rowHover]="true"
+  [showGridlines]="true" [paginator]="true"
   [globalFilterFields]="['numeroDocumento','numeroFactura','fechaAtencion','nombres','apellidos','cedula','email','nombreAgencia']"
   [tableStyle]="{ 'min-width': '90rem' }"
-  currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros."
-  [showCurrentPageReport]="true">
+  currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros." [showCurrentPageReport]="true">
 
   <!-- CAPTION -->
   <ng-template pTemplate="caption">
     <div class="flex justify-content-between flex-column sm:flex-row">
-      <button
-        pButton
-        label="Borrar Filtros"
-        class="p-button-outlined mb-2"
-        icon="pi pi-filter-slash"
+      <button pButton label="Borrar Filtros" class="p-button-outlined mb-2" icon="pi pi-filter-slash"
         (click)="clearFilter()">
       </button>
 
@@ -83,9 +66,14 @@
   <!-- BODY -->
   <ng-template pTemplate="body" let-rowData>
     <tr>
-      <td style="text-align: center;">
+      <!-- <td style="text-align: center;">
         <button pButton icon="pi pi-eye" [rounded]="true" [outlined]="true" severity="info"
           (click)="verDetalle(rowData)" pTooltip="Ver Detalle"></button>
+      </td> -->
+      <td style="text-align: center;">
+        <button pButton icon="pi pi-envelope" [rounded]="true" [outlined]="true" severity="info"
+          (click)="enviarEncuesta(rowData)" pTooltip="Programar y enviar encuesta (email)">
+        </button>
       </td>
 
       <td style="text-align: center;">{{ rowData.fechaAtencion }}</td>

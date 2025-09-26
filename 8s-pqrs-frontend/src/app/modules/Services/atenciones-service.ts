@@ -112,9 +112,13 @@ export class AtencionesService {
     return this.api.post(`${this.base}desactivar`, { idAtencion }) as Observable<any>;
   }
 
-  programarAuto(idAtencion: number, canalEnvio: 'EMAIL'|'WHATSAPP'|'SMS'|'OTRO'): Observable<any> {
-    return this.api.post(`${this.base}programar_auto`, { idAtencion, canalEnvio }) as Observable<any>;
-    }
+  // programarAuto(idAtencion: number, canalEnvio: 'EMAIL'|'WHATSAPP'|'SMS'|'OTRO'): Observable<any> {
+  //   return this.api.post(`${this.base}programar_auto`, { idAtencion, canalEnvio }) as Observable<any>;
+  //   }
+
+    programarAuto(idAtencion: number, canalEnvio: 'EMAIL'|'WHATSAPP'|'SMS'|'OTRO') {
+    return this.api.post(`${this.base}programar_auto`, { idAtencion, canalEnvio });
+  }
 
 validarAsesor(cedulaAsesor: string) {
   return this.api.post<{ success:boolean; exists:boolean; idAsesor?:number; nombres?:string; apellidos?:string; email?:string }>(
@@ -122,6 +126,7 @@ validarAsesor(cedulaAsesor: string) {
     { cedulaAsesor }
   );
 }
+
 
     
 }

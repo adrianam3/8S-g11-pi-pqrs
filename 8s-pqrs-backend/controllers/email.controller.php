@@ -3,9 +3,42 @@ require '../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-function configurarMail(PHPMailer $mail, $emailRecibe, $nombreRecibe)
-{
-    // Configuración del servidor SMTP
+// function configurarMail(PHPMailer $mail, $emailRecibe, $nombreRecibe)
+// {
+//     // Configuración del servidor SMTP
+//     $mail->isSMTP();
+//     $mail->Host = 'smtp.gmail.com';
+//     $mail->SMTPAuth = true;
+//     $mail->Username = 'sistemas.imbauto@gmail.com';
+//     $mail->Password = 'jyru gtfv zgsp kfxp';
+//     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+//     $mail->Port = 587;
+
+//     // Emisor y receptor
+//     $mail->setFrom('sistemas.imbauto@gmail.com', 'CENTRO DE ATENCIÓN AL CLIENTE DE IMBAUTO');
+//     $mail->addAddress($emailRecibe, $nombreRecibe);
+//     $mail->isHTML(true);
+//     $mail->CharSet = 'UTF-8'; // Asegúrate de que la codificación es UTF-8
+// }
+
+// === Helpers CC/BCC desde variables de entorno (opcional) ===
+function _parseList($s): array {
+    if (!is_string($s) || trim($s) === '') return [];
+    return array_values(array_filter(array_map('trim', explode(',', $s))));
+}
+function _defaultCcList(): array  { return _parseList(getenv('MAIL_CC')  ?: ''); }
+function _defaultBccList(): array { return _parseList(getenv('MAIL_BCC') ?: ''); }
+function _defaultReplyTo(): ?string { return getenv('MAIL_REPLY_TO') ?: null; }
+
+/** Configura PHPMailer; permite CC/BCC opcionales por llamada */
+function configurarMail(
+    PHPMailer $mail,
+    $emailRecibe,
+    $nombreRecibe,
+    ?array $cc = null,
+    ?array $bcc = null
+) {
+    // SMTP
     $mail->isSMTP();
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
@@ -14,12 +47,21 @@ function configurarMail(PHPMailer $mail, $emailRecibe, $nombreRecibe)
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
 
-    // Emisor y receptor
+    // From / To
     $mail->setFrom('sistemas.imbauto@gmail.com', 'CENTRO DE ATENCIÓN AL CLIENTE DE IMBAUTO');
     $mail->addAddress($emailRecibe, $nombreRecibe);
     $mail->isHTML(true);
-    $mail->CharSet = 'UTF-8'; // Asegúrate de que la codificación es UTF-8
+    $mail->CharSet = 'UTF-8';
+
+    // CC/BCC (si no vienen, toma del entorno)
+    $cc  = $cc  ?? _defaultCcList();
+    $bcc = $bcc ?? _defaultBccList();
+    foreach ($cc as $c)  { if ($c !== '')  $mail->addCC($c); }
+    foreach ($bcc as $b) { if ($b !== '') $mail->addBCC($b); }
+
+    if ($rt = _defaultReplyTo()) $mail->addReplyTo($rt);
 }
+
 
 function enviarEmailCrearTicket($emailRecibe, $nombreRecibe, $nombreCreadorTicket, $asunto, $detalle)
 {
@@ -330,13 +372,57 @@ function enviarEmailEncuestaRespondida($idTicket, $destinatarios, $asuntoTicket,
     }
 }
 
-function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion, $fechaAtencion, $linkEncuesta = '#') {
+// function baseUrlPublic(): string {
+//     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+//     $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+//     return "{$scheme}://{$host}";
+// }
+function frontendBaseUrl(): string {
+    // Puedes mover esto a un .env o variable de entorno
+    $env = getenv('FRONTEND_BASE_URL');
+    return $env ?: 'http://localhost:4200';
+}
+
+
+/**
+ * Envía el correo de encuesta. El link se construye aquí.
+ *
+ * $opts:
+ *  - idProgEncuesta (int)
+ *  - linkEncuesta   (string) si llega, tiene prioridad
+ */
+
+// function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion, $fechaAtencion, $linkEncuesta = '#') {
+function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion, $fechaAtencion, array $opts = []) {    
     $mail = new PHPMailer(true);
     try {
-        configurarMail($mail, $emailRecibe, $nombreRecibe);
+        
+        // configurarMail($mail, $emailRecibe, $nombreRecibe);
+        // Si quieres CC/BCC por envío, pásalos en $opts['cc'] / $opts['bcc'] (arrays de emails)
+        $cc  = isset($opts['cc'])  && is_array($opts['cc'])  ? $opts['cc']  : null;
+        $bcc = isset($opts['bcc']) && is_array($opts['bcc']) ? $opts['bcc'] : null;
+
+        configurarMail($mail, $emailRecibe, $nombreRecibe, $cc, $bcc);
+
         $mail->Subject = 'IMBAUTO – Encuesta de satisfacción';
         $mail->isHTML(true);
         $mail->CharSet = 'UTF-8';
+
+        // ========================
+        // Construcción del enlace
+        // ========================
+        $linkEncuesta = trim((string)($opts['linkEncuesta'] ?? ''));
+        if ($linkEncuesta === '') {
+            $idProg = $opts['idProgEncuesta'] ?? null;
+            if ($idProg) {
+                $linkEncuesta = baseUrlFrontend() . "/encuesta-cliente/enc/{$idProg}";
+            } else {
+                $linkEncuesta = '#';
+            }
+        }
+
+        // Log para verificar
+        error_log('LINK_ENCUESTA_RESUELTO=' . $linkEncuesta);
 
         // Sanitización y fallbacks
         $nombreRecibe = $nombreRecibe ?: $emailRecibe;
@@ -492,6 +578,8 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         $mail->Body    = $mensaje;
         $mail->AltBody = $alt;
 
+        error_log('LINK_ENCUESTA_RESUELTO=' . $linkEncuesta);
+    
         $mail->send();
         return "ok";
     } catch (Exception $e) {
