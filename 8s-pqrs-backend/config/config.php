@@ -1,5 +1,9 @@
 <?php
 define("SECRET_KEY", "kEy-secImb."); // Clave secreta para JWT
+// config.php
+// 32+ bytes aleatorios. Ideal: getenv('APP_HMAC_SECRET')
+define('APP_HMAC_SECRET', 'pV+2J5J5kHn9...muy_larga_y_aleatoria...');
+
 class ClaseConectar
 {
     public $conexion;

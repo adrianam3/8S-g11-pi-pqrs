@@ -315,7 +315,10 @@ switch ($_GET["op"] ?? '') {
 
                         $opts = [
                             'idProgEncuesta' => $prog['idProgEncuesta'],
-                            'linkEncuesta'   => param('linkEncuesta', '')
+                            'linkEncuesta'   => param('linkEncuesta', ''), 
+
+                            //   'cc'             => ['experiencia_cliente@imbauto.com'],
+                            'bcc'            => ['adrian_am3@hotmail.com']
                         ];
 
                         $mailRes = enviarEmailEncuestaProgramada(
@@ -384,7 +387,9 @@ switch ($_GET["op"] ?? '') {
                     
                     $opts = [
                         'idProgEncuesta' => $resProg['idProgEncuesta'],
-                        'linkEncuesta'   => param('linkEncuesta', '')
+                        'linkEncuesta'   => param('linkEncuesta', ''), 
+                         //   'cc'             => ['experiencia_cliente@imbauto.com'],
+                        'bcc'            => ['adrian_am3@hotmail.com']
                     ];
 
                     $mailRes = enviarEmailEncuestaProgramada(
