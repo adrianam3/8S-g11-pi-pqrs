@@ -34,7 +34,7 @@ export class EncuestaList implements OnInit {
 
     public encuestasAll: any[] = [];
     public loading: boolean = false;
-    private encuestaApi = `/controllers/encuesta.controller.php?op=`;
+    private encuestaApi = `controllers/encuesta.controller.php?op=`;
 
     constructor(
         private confirmationService: ConfirmationService,
@@ -68,7 +68,6 @@ export class EncuestaList implements OnInit {
         });
     }
 
-    /** 🔹 Cargar encuestas del backend */
     async loadEncuestas() {
         this.loading = true;
 

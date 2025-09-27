@@ -1,0 +1,92 @@
+.boton-respuesta {
+  width: auto;
+  min-width: 160px;
+  padding: 1rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  color: #00bfa5;
+  background-color: white;
+  border: 2px solid #00bfa5;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.boton-respuesta:hover {
+  background-color: #e0f2f1;
+}
+
+.boton-respuesta.selected {
+  background-color: #1b645a;
+  color: white;
+  font-weight: 600;
+  transform: scale(1.05);
+}
+
+/* Para botones redondos tipo NPS */
+.boton-respuesta-circular {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1rem;
+  border-radius: 50%;
+  padding: 0;
+  text-align: center;
+  line-height: 2.5rem;
+  border: 2px solid #00bfa5;
+  color: #00bfa5;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.boton-respuesta-circular:hover {
+  background-color: #e0f2f1;
+}
+
+.boton-respuesta-circular.selected {
+  background-color: #1b645a;
+  color: white;
+  font-weight: bold;
+  transform: scale(1.15);
+}
+// presentación cabecera
+.encuesta-info {
+  .kv {
+    display: grid;
+    gap: .25rem 1rem;
+  }
+
+  .kv-row {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    align-items: center;
+    padding: .35rem 0;
+    border-bottom: 1px dashed var(--surface-200);
+  }
+
+  .kv-row:last-child {
+    border-bottom: 0;
+  }
+
+  .kv-label {
+    color: var(--text-color-secondary);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .kv-value {
+    min-width: 0;            // truncado elegante si es muy largo
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Ajuste responsivo para pantallas pequeñas */
+// @media (max-width: 767px) {
+//   .encuesta-info .kv-row {
+//     grid-template-columns: 120px 1fr;
+//   }
+// }
+

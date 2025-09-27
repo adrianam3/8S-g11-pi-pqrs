@@ -214,17 +214,62 @@ switch ($_GET["op"] ?? '') {
         else { http_response_code(500); echo json_encode(["success"=>false, "error"=>$res]); }
         break;
 
-    // === SP: registrar consentimiento
-    case 'registrar_consentimiento':
-        $id = filter_var(param('idProgEncuesta', null), FILTER_VALIDATE_INT);
-        $acepta = (int) param('acepta', 1);
-        $ip = (string) param('ip', '0.0.0.0');
-        $ua = (string) param('userAgent', '');
-        if (!$id) { http_response_code(400); echo json_encode(["message"=>"Parámetro idProgEncuesta inválido"]); break; }
-        $res = $ep->sp_registrar_consentimiento($id, $acepta, $ip, $ua);
-        if ($res === 1 || $res === '1') echo json_encode(["success"=>true]);
-        else { http_response_code(500); echo json_encode(["success"=>false, "error"=>$res]); }
+    // // === SP: registrar consentimiento
+    // case 'registrar_consentimiento':
+    //     $id = filter_var(param('idProgEncuesta', null), FILTER_VALIDATE_INT);
+    //     $acepta = (int) param('acepta', 1);
+    //     $ip = (string) param('ip', '0.0.0.0');
+    //     $ua = (string) param('userAgent', '');
+    //     if (!$id) { http_response_code(400); echo json_encode(["message"=>"Parámetro idProgEncuesta inválido"]); break; }
+    //     $res = $ep->sp_registrar_consentimiento($id, $acepta, $ip, $ua);
+    //     if ($res === 1 || $res === '1') echo json_encode(["success"=>true]);
+    //     else { http_response_code(500); echo json_encode(["success"=>false, "error"=>$res]); }
+    //     break;
+// === SP: registrar consentimiento
+case 'registrar_consentimiento':
+    header('Content-Type: application/json; charset=utf-8');
+
+    // Lee parámetros
+    $id = filter_var(param('idProgEncuesta', null), FILTER_VALIDATE_INT);
+    // Admite '1'/'0' o 'true'/'false'
+    $aceptaRaw = (string) param('acepta', '1');
+    $acepta = ($aceptaRaw === '1' || strtolower($aceptaRaw) === 'true') ? 1 : 0;
+
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(["success"=>false, "message"=>"Parámetro idProgEncuesta inválido"]);
         break;
+    }
+
+    // IP / UA (si quieres registrar los reales del request)
+    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    if (strpos($ip, ',') !== false) { $ip = trim(explode(',', $ip)[0]); } // primer IP si viene lista
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+    $res = $ep->sp_registrar_consentimiento($id, $acepta, $ip, $ua);
+
+    if ($res === 1 || $res === '1') {
+        echo json_encode(["success"=>true, "message"=>"Consentimiento registrado"]);
+        break;
+    }
+
+    // Si no es 1, el modelo devolvió mensaje de error (string)
+    $err = (string) $res;
+
+    // ⚠️ Caso idempotente: ya estaba registrado → lo tratamos como éxito “suave”
+    if (stripos($err, 'consentimiento ya registrado') !== false) {
+        echo json_encode([
+            "success" => true,
+            "alreadyRegistered" => true,
+            "message" => $err
+        ]);
+        break; // 200 OK
+    }
+
+    // Otros errores reales → 500
+    http_response_code(500);
+    echo json_encode(["success"=>false, "error"=>$err, "message"=>"No se pudo registrar el consentimiento"]);
+    break;
 
 
             // === SP: generar PQR desde respuestas de una programación

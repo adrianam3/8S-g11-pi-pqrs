@@ -100,6 +100,13 @@ export const appRoutes: Routes = [
 
             { path: 'dashOld', component: Dashboard },
 
+            // {
+            //     path: 'encuesta-cliente',
+            //     loadChildren: () =>
+            //         import('./app/modules/encuesta-cliente/encuesta-cliente.routes').then((m) => m.encuestaClienteRoutes)
+            // },
+
+
             // { path: 'uikit', loadChildren: () => import('./app/pages/uikit/uikit.routes') },
             // { path: 'documentation', component: Documentation },
             // { path: 'pages', loadChildren: () => import('./app/pages/pages.routes') }
@@ -108,6 +115,11 @@ export const appRoutes: Routes = [
 
     // Carga perezosa para módulo auth si lo tienes
     { path: 'auth', loadChildren: () => import('./app/pages/auth/auth.routes') },
+    {
+        path: 'encuesta-cliente',
+        loadChildren: () =>
+            import('./app/modules/encuesta-cliente/encuesta-cliente.routes').then((m) => m.encuestaClienteRoutes)
+    },
 
     // Ruta comodín
     { path: '**', redirectTo: '/notfound' }

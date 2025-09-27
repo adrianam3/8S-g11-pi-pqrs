@@ -1,0 +1,29 @@
+<div class="consentimiento-wrapper">
+    <h2 class="titulo">Política de Datos Personales</h2>
+
+    <p>Por favor, acepte la política de datos personales antes de continuar.</p>
+
+    <p>
+        En cumplimiento al Art. 7 "Tratamiento Legítimo de Datos Personales" de la Ley Orgánica de Protección de Datos
+        Personales,
+        usted acepta que la información expuesta es verídica, real y verificable y estará sujeta a control por parte de
+        la Dirección
+        de Servicio Público de Empleo, además está brindando su consentimiento, para que la información recopilada en su
+        cuenta,
+        pueda ser usada para comunicarnos con usted en referencia a los servicios que brinda nuestra plataforma,
+        incluyéndose,
+        vinculaciones a ofertas laborales, publicación de ofertas laborales, capacitaciones. Su información podrá ser
+        proporcionada a
+        Organismos que tengan convenios con el Ministerio del Trabajo, exceptuando de responsabilidades a la Dirección
+        de Servicio Público
+        de Empleo del uso que puedan darle a esa información dichos Organismos –
+        <a href="#" (click)="verPolitica($event)">Leer más..</a>
+    </p>
+
+    <div class="acciones">
+        <button pButton label="No Acepto" class="p-button-danger" (click)="rechazar()"></button>
+        <button pButton label="Aceptar" class="p-button-success" (click)="aceptar()"></button>
+    </div>
+</div>
+
+<p-confirmDialog></p-confirmDialog>

@@ -1,0 +1,176 @@
+<div class="card card-w-title" style="display: flex; justify-content: space-between; align-items: center">
+    <div style="display: flex; align-items: center">
+        <i class="pi pi-star-fill"></i>
+        <span style="font-size: 15px; margin-left: 5px"><b>ENCUESTA</b></span>
+    </div>
+</div>
+
+<div *ngIf="mostrarEncuesta">
+    <!-- Información general del encuestado -->
+    <div *ngIf="encuestaProgramada" class="card card-w-title" style="padding: 20px">
+        <!-- <h5><b>Encuesta: {{ encuestaProgramada.nombreEncuesta }}</b></h5>
+    <div class="p-fluid">
+      <div class="field grid">
+        <div class="col-12 md:col-6">
+          <label><b>Cliente:</b> {{ encuestaProgramada.nombreCompletoCliente }}</label>
+        </div>
+        <div class="col-12 md:col-6">
+          <label><b>Fecha Atención:</b> {{ encuestaProgramada.fechaAtencion }}</label>
+        </div>
+        <div class="col-12 md:col-6">
+          <label><b>Canal:</b> {{ encuestaProgramada.nombreCanal }}</label>
+        </div>
+        <div class="col-12 md:col-6">
+          <label><b>Intentos Enviados:</b> {{ encuestaProgramada.intentosEnviados }} / {{ encuestaProgramada.maxIntentos }}</label>
+        </div>
+      </div>
+    </div> -->
+
+        <!-- <div class="surface-card p-4 border-round-lg shadow-1 encuesta-info"> -->
+        <div class="grid ">
+            <div class="col-12 mb:col-7">
+                <h4 class="m-0 text-900 flex align-items-center gap-2">
+                    <i class="pi pi-star-fill text-primary"></i>
+                    <span>Encuesta: <b>{{ encuestaProgramada?.nombreEncuesta }}</b></span>
+                </h4>
+            </div>
+
+            <div class="col-12 mb:col-5">
+                <div class="kv">
+                    <div class="kv-row">
+                        <div class="kv-label">
+                            <i class="pi pi-user mr-2"></i>Cliente
+                        </div>
+                        <div class="kv-value text-900 font-medium">
+                            {{ encuestaProgramada?.nombreCompletoCliente }}
+                        </div>
+                    </div>
+
+                    <div class="kv-row">
+                        <div class="kv-label">
+                            <i class="pi pi-calendar mr-2"></i>Fecha Atención
+                        </div>
+                        <div class="kv-value text-900">
+                            {{ encuestaProgramada?.fechaAtencion | date:'yyyy-MM-dd' }}
+                        </div>
+                    </div>
+
+                    <div class="kv-row">
+                        <div class="kv-label">
+                            <i class="pi pi-share-alt mr-2"></i>Canal
+                        </div>
+                        <div class="kv-value text-900">
+                            {{ encuestaProgramada?.nombreCanal || '—' }}
+                        </div>
+                    </div>
+
+                    <div class="kv-row">
+                        <div class="kv-label">
+                            <i class="pi pi-send mr-2"></i>Intentos
+                        </div>
+                        <div class="kv-value">
+                            <span class="p-tag p-tag-rounded p-tag-info">
+                                {{ encuestaProgramada?.intentosEnviados }} / {{ encuestaProgramada?.maxIntentos }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- </div> -->
+
+    <!-- Preguntas dinámicas -->
+    <form *ngIf="formEncuesta && preguntas && preguntas.length > 0" [formGroup]="formEncuesta"
+        (ngSubmit)="enviarEncuesta()">
+        <div class="card">
+            <div *ngFor="let pregunta of preguntas; let i = index; trackBy: trackPregunta" class="mb-4">
+                <label class="block text-lg font-bold mb-2">
+                    {{ pregunta.orden }}. {{ pregunta.texto }}
+                </label>
+
+                <!-- Tipo 1: Escala 1 a 10 (botones) -->
+                <ng-container *ngIf="pregunta.tipoP === 1">
+                    <div class="flex gap-3 flex-wrap justify-content-center">
+                        <button *ngFor="let opcion of pregunta.opciones; trackBy: trackOpcion" type="button"
+                            class="boton-respuesta-circular"
+                            [ngClass]="{ 'selected': esSeleccionado(pregunta.idPregunta, opcion.valorNumerico) }"
+                            (click)="seleccionarRespuesta(pregunta, opcion)">
+                            {{ opcion.etiqueta }}
+                        </button>
+                    </div>
+                </ng-container>
+
+                <!-- Tipo 2: Opción múltiple (radio) -->
+                <ng-container *ngIf="pregunta.tipoP === 2">
+                    <div *ngFor="let opcion of pregunta.opciones; trackBy: trackOpcion" class="field-radiobutton">
+                        <p-radioButton name="pregunta{{ pregunta.idPregunta }}" [value]="opcion.valorNumerico"
+                            [inputId]="'opcion_' + opcion.idOpcion"
+                            [formControl]="getRespuestaControl(pregunta.idPregunta)"
+                            (onClick)="onRadioClick(pregunta, opcion)"></p-radioButton>
+                        <label [for]="'opcion_' + opcion.idOpcion">{{ opcion.etiqueta }}</label>
+                    </div>
+                </ng-container>
+
+                <!-- Tipo 3: Escala/NPS 0 a 10 (botones) -->
+                <ng-container *ngIf="pregunta.tipoP === 3">
+                    <div class="flex gap-2 flex-wrap justify-content-center mt-2">
+                        <button *ngFor="let opcion of pregunta.opciones; trackBy: trackOpcion" type="button"
+                            class="boton-respuesta"
+                            [ngClass]="{ 'selected': esSeleccionado(pregunta.idPregunta, opcion.valorNumerico) }"
+                            (click)="seleccionarRespuesta(pregunta, opcion)">
+                            {{ opcion.etiqueta }}
+                        </button>
+                    </div>
+                </ng-container>
+
+                <!-- Categoría PQRS (solo si la opción seleccionada generaPqr = 1) -->
+                <div *ngIf="pregunta.requiereCategoria" class="mt-2">
+                    <label class="block mb-1">Categoría PQRS <span class="text-red-500">*</span></label>
+                    <p-select [options]="categoriasPqrs" optionLabel="descripcion" optionValue="idCategoria"
+                        placeholder="Seleccione una categoría" [formControl]="getCategoriaControl(pregunta.idPregunta)"
+                        [showClear]="true" class="w-full"></p-select>
+
+                    <small class="p-error"
+                        *ngIf="getCategoriaControl(pregunta.idPregunta).touched && getCategoriaControl(pregunta.idPregunta).hasError('required')">
+                        Seleccione una categoría.
+                    </small>
+                </div>
+
+                <!-- Comentario (solo si la opción seleccionada permitirComentario = 1) -->
+                <div *ngIf="pregunta.requiereComentario" class="mt-2">
+                    <label class="block mb-1">Comentario <span class="text-red-500">*</span></label>
+                    <textarea pTextarea rows="5" cols="30" [formControl]="getComentarioControl(pregunta.idPregunta)"
+                        placeholder="Describa brevemente su caso o comentario"></textarea>
+                    <small class="p-error"
+                        *ngIf="getComentarioControl(pregunta.idPregunta).touched && getComentarioControl(pregunta.idPregunta).hasError('required')">
+                        El comentario es obligatorio.
+                    </small>
+                    <small class="p-error" *ngIf="getComentarioControl(pregunta.idPregunta).hasError('maxlength')">
+                        Máximo 1000 caracteres.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <p-toolbar>
+            <div class="p-toolbar-group-start">
+                <p-button label="Cancelar" icon="pi pi-times" severity="secondary"
+                    (click)="cancelarEncuesta()"></p-button>
+            </div>
+            <div class="p-toolbar-group-end">
+                <p-button label="Enviar" icon="pi pi-check" type="submit" severity="success"></p-button>
+            </div>
+        </p-toolbar>
+    </form>
+
+</div>
+
+<!-- Cargando -->
+<div class="overlay" *ngIf="loading">
+    <p-progressSpinner strokeWidth="6"></p-progressSpinner>
+</div>
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

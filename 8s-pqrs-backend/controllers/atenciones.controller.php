@@ -315,7 +315,7 @@ switch ($_GET["op"] ?? '') {
 
                         $opts = [
                             'idProgEncuesta' => $prog['idProgEncuesta'],
-                            'linkEncuesta'   => param('linkEncuesta', ''), 
+                           // 'linkEncuesta'   => param('linkEncuesta', ''), 
 
                             //   'cc'             => ['experiencia_cliente@imbauto.com'],
                             'bcc'            => ['adrian_am3@hotmail.com']
@@ -331,6 +331,10 @@ switch ($_GET["op"] ?? '') {
 
                         // no rompas el flujo por el correo; solo anótalo
                         $payload['emailStatus'] = ($mailRes === 'ok') ? 'sent' : ('error: ' . $mailRes);
+                        if ($mailRes !== 'ok') {
+    error_log('EMAIL_SEND_ERROR: ' . $mailRes);
+}
+
                     }
                     // <<<<<< FIN ENVÍO EMAIL <<<<<<
 
@@ -387,7 +391,7 @@ switch ($_GET["op"] ?? '') {
                     
                     $opts = [
                         'idProgEncuesta' => $resProg['idProgEncuesta'],
-                        'linkEncuesta'   => param('linkEncuesta', ''), 
+                       // 'linkEncuesta'   => param('linkEncuesta', ''), 
                          //   'cc'             => ['experiencia_cliente@imbauto.com'],
                         'bcc'            => ['adrian_am3@hotmail.com']
                     ];
@@ -403,6 +407,10 @@ switch ($_GET["op"] ?? '') {
                     
 
                     $payload['emailStatus'] = ($mailRes === 'ok') ? 'sent' : ('error: ' . $mailRes);
+                    if ($mailRes !== 'ok') {
+    error_log('EMAIL_SEND_ERROR: ' . $mailRes);
+}
+
                 } else {
                     $payload['emailStatus'] = 'skip: email inválido o vacío';
                 }
@@ -434,6 +442,19 @@ switch ($_GET["op"] ?? '') {
             echo json_encode(["success"=>false, "exists"=>false, "message"=>"La cédula del asesor no corresponde a ningún usuario"]);
         }
         break;
+        // === RESOLVER TOKEN DE ENCUESTA ===
+        case 'resolver_token':
+            header('Content-Type: application/json; charset=utf-8');
+            $t = (string) param('t', '');
+            if ($t === '') { http_response_code(400); echo json_encode(['success'=>false,'message'=>'Token requerido']); break; }
+
+            require_once(__DIR__.'/security_link.php');
+            $payload = verify_survey_token($t /* , $email opcional para “atarlo” */);
+            if ($payload === false) { http_response_code(401); echo json_encode(['success'=>false,'message'=>'Token inválido o expirado']); break; }
+
+            // Devuelve el id de programación para que el front cargue todo
+            echo json_encode(['success'=>true, 'idProgEncuesta'=>(int)$payload['pid']]);
+            break;
 
 
     default:

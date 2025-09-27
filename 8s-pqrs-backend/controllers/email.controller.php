@@ -1,5 +1,6 @@
 <?php
 require '../vendor/autoload.php';
+require_once(__DIR__.'/security_link.php'); // << importar utilidades
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -402,6 +403,10 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         $cc  = isset($opts['cc'])  && is_array($opts['cc'])  ? $opts['cc']  : null;
         $bcc = isset($opts['bcc']) && is_array($opts['bcc']) ? $opts['bcc'] : null;
 
+        // Depuración a error_log
+        $mail->SMTPDebug  = 2;
+        $mail->Debugoutput = function($str) { error_log('PHPMailer: ' . $str); };
+
         configurarMail($mail, $emailRecibe, $nombreRecibe, $cc, $bcc);
 
         $mail->Subject = 'IMBAUTO – Encuesta de satisfacción';
@@ -411,11 +416,25 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         // ========================
         // Construcción del enlace
         // ========================
+        // $linkEncuesta = trim((string)($opts['linkEncuesta'] ?? ''));
+        // if ($linkEncuesta === '') {
+        //     $idProg = $opts['idProgEncuesta'] ?? null;
+        //     if ($idProg) {
+        //         $linkEncuesta = baseUrlFrontend() . "/encuesta-cliente/enc/{$idProg}";
+        //     } else {
+        //         $linkEncuesta = '#';
+        //     }
+        // }
+
+
+        // 1) Si viene linkEncuesta, úsalo; si no, construye token seguro
         $linkEncuesta = trim((string)($opts['linkEncuesta'] ?? ''));
         if ($linkEncuesta === '') {
             $idProg = $opts['idProgEncuesta'] ?? null;
             if ($idProg) {
-                $linkEncuesta = baseUrlFrontend() . "/encuesta-cliente/enc/{$idProg}";
+                // token con 7 días de vigencia (cambia si quieres)
+                $token = make_survey_token((int)$idProg, $emailRecibe, 7*24*3600);
+                $linkEncuesta = build_survey_link($token);
             } else {
                 $linkEncuesta = '#';
             }
@@ -524,7 +543,7 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
                                 </p>
                                 <p style="margin:0 0 20px 0;font-size:12px;color:#555;">(0 = Nada probable · 10 = Muy probable)</p>
                                 <div style="text-align:center;margin:0 0 24px 0;">
-                                <a href="{$linkEsc}" style="display:inline-block;padding:12px 20px;text-decoration:none;background:#0a7cc1;color:#fff;border-radius:6px;font-weight:bold;">
+                                <a href="{$linkEncuesta}" style="display:inline-block;padding:12px 20px;text-decoration:none;background:#0a7cc1;color:#fff;border-radius:6px;font-weight:bold;">
                                     Completar encuesta
                                 </a>
                                 </div>
@@ -554,7 +573,7 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
                                 <!-- <a href="{$scheme}://{$host}/politica-privacidad" style="color:#667085;text-decoration:none;">Política de privacidad</a> &nbsp;|&nbsp; -->
                                 <a href="{$privacyUrlEsc}" style="color:#667085;text-decoration:none;">Política de privacidad</a> &nbsp;|&nbsp;
                                 <a href="{$scheme}://{$host}/contacto" style="color:#667085;text-decoration:none;">Contáctanos</a> &nbsp;|&nbsp;
-                                <a href="{$linkEsc}&unsub=1" style="color:#667085;text-decoration:none;">Darse de baja</a><br>
+                                <a href="{$linkEncuesta}&unsub=1" style="color:#667085;text-decoration:none;">Darse de baja</a><br>
                                 ©2025 Imbauto S.A. Todos los derechos reservados.
                             </td>
                             </tr>
@@ -575,15 +594,54 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
              . "Gracias por elegir Imbauto.\n"
              . "Equipo de Experiencia del Cliente – Imbauto S.A.\n";
 
-        $mail->Body    = $mensaje;
-        $mail->AltBody = $alt;
+        // $mail->Body    = $mensaje;
+        // $mail->AltBody = $alt;
+        $mail->Body    = str_replace(['{$linkEsc}','{$linkEncuesta}'], [$linkEncuesta,$linkEncuesta], $mail->Body);
+        $mail->AltBody = str_replace(['{$linkEsc}','{$linkEncuesta}'], [$linkEncuesta,$linkEncuesta], $mail->AltBody);
 
-        error_log('LINK_ENCUESTA_RESUELTO=' . $linkEncuesta);
+        // error_log('BODY_LEN=' . strlen($mensaje));
+        // error_log('ALT_LEN='  . strlen($alt));
+
+        // Parche defensivo por si algo quedó vacío:
+        if (!isset($mail->Body) || trim($mail->Body) === '') {
+            // fallback mínimo (no ideal, pero evita el error)
+            $mail->Body = '<p>&nbsp;</p>';
+        }
+        if (!isset($mail->AltBody) || trim($mail->AltBody) === '') {
+            $mail->AltBody = ' ';
+        }
+       
+        // error_log('LINK_ENCUESTA_RESUELTO=' . $linkEncuesta);
     
-        $mail->send();
-        return "ok";
+    //     $mail->send();
+    //     return "ok";
+    // } catch (Exception $e) {
+    //     return "Error al enviar correo: " . ($mail->ErrorInfo ?: $e->getMessage());
+    // }
+        // error_log('BODY_LEN=' . strlen($mensaje));
+        // error_log('ALT_LEN='  . strlen($alt));
+
+// Después de armar $mensaje y $alt, y ANTES de $mail->send():
+$mail->CharSet = 'UTF-8';
+$mail->isHTML(true);
+
+// Usa el parser de PHPMailer para HTML (convierte y arma bien multipart/related):
+$mail->msgHTML($mensaje);     // <-- en vez de $mail->Body = $mensaje;
+
+// Fuerza el texto alternativo que tú ya generas
+$mail->AltBody = $alt;
+
+error_log('PH_BODY_LEN='.strlen($mail->Body).' ALT='.strlen($mail->AltBody));
+
+
+    if (!$mail->send()) {
+            error_log('PHPMailer SEND FAILED: ' . $mail->ErrorInfo);
+            return 'Error al enviar correo: ' . $mail->ErrorInfo;
+        }
+        return 'ok';
     } catch (Exception $e) {
-        return "Error al enviar correo: " . ($mail->ErrorInfo ?: $e->getMessage());
+        error_log('PHPMailer EXCEPTION: ' . ($mail->ErrorInfo ?: $e->getMessage()));
+        return 'Error al enviar correo: ' . ($mail->ErrorInfo ?: $e->getMessage());
     }
 }
 
