@@ -1,6 +1,6 @@
 <?php
 require '../vendor/autoload.php';
-require_once(__DIR__.'/security_link.php'); // << importar utilidades
+require_once(__DIR__ . '/security_link.php'); // << importar utilidades
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -23,13 +23,24 @@ use PHPMailer\PHPMailer\Exception;
 // }
 
 // === Helpers CC/BCC desde variables de entorno (opcional) ===
-function _parseList($s): array {
-    if (!is_string($s) || trim($s) === '') return [];
+function _parseList($s): array
+{
+    if (!is_string($s) || trim($s) === '')
+        return [];
     return array_values(array_filter(array_map('trim', explode(',', $s))));
 }
-function _defaultCcList(): array  { return _parseList(getenv('MAIL_CC')  ?: ''); }
-function _defaultBccList(): array { return _parseList(getenv('MAIL_BCC') ?: ''); }
-function _defaultReplyTo(): ?string { return getenv('MAIL_REPLY_TO') ?: null; }
+function _defaultCcList(): array
+{
+    return _parseList(getenv('MAIL_CC') ?: '');
+}
+function _defaultBccList(): array
+{
+    return _parseList(getenv('MAIL_BCC') ?: '');
+}
+function _defaultReplyTo(): ?string
+{
+    return getenv('MAIL_REPLY_TO') ?: null;
+}
 
 /** Configura PHPMailer; permite CC/BCC opcionales por llamada */
 function configurarMail(
@@ -55,12 +66,19 @@ function configurarMail(
     $mail->CharSet = 'UTF-8';
 
     // CC/BCC (si no vienen, toma del entorno)
-    $cc  = $cc  ?? _defaultCcList();
+    $cc = $cc ?? _defaultCcList();
     $bcc = $bcc ?? _defaultBccList();
-    foreach ($cc as $c)  { if ($c !== '')  $mail->addCC($c); }
-    foreach ($bcc as $b) { if ($b !== '') $mail->addBCC($b); }
+    foreach ($cc as $c) {
+        if ($c !== '')
+            $mail->addCC($c);
+    }
+    foreach ($bcc as $b) {
+        if ($b !== '')
+            $mail->addBCC($b);
+    }
 
-    if ($rt = _defaultReplyTo()) $mail->addReplyTo($rt);
+    if ($rt = _defaultReplyTo())
+        $mail->addReplyTo($rt);
 }
 
 
@@ -133,13 +151,13 @@ function enviarEmailAgenteAsignado($idTicket, $emailRecibe, $nombreRecibe, $nomb
     }
 }
 
-function enviarEmailRecuperacion($email) 
+function enviarEmailRecuperacion($email)
 {
     try {
         $mail = new PHPMailer(true);
         configurarMail($mail, $email, '');
         $token = generateToken($email);
-        $resetLink = "http://localhost:4200/olvido-contrasena?token=$token&usuario=".base64_encode($email);
+        $resetLink = "http://localhost:4200/olvido-contrasena?token=$token&usuario=" . base64_encode($email);
         $mail->Subject = 'Restablecer Contraseña - HELPDESK IMBAUTO';
         $body = <<<EOT
           Hola,<br/>
@@ -157,7 +175,7 @@ function enviarEmailRecuperacion($email)
     }
 }
 
-function enviarEmailCrearCuenta($emailRecibe, $nombreRecibe, $password) 
+function enviarEmailCrearCuenta($emailRecibe, $nombreRecibe, $password)
 {
     $mail = new PHPMailer(true);
     try {
@@ -378,7 +396,8 @@ function enviarEmailEncuestaRespondida($idTicket, $destinatarios, $asuntoTicket,
 //     $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
 //     return "{$scheme}://{$host}";
 // }
-function frontendBaseUrl(): string {
+function frontendBaseUrl(): string
+{
     // Puedes mover esto a un .env o variable de entorno
     $env = getenv('FRONTEND_BASE_URL');
     return $env ?: 'http://localhost:4200';
@@ -394,18 +413,24 @@ function frontendBaseUrl(): string {
  */
 
 // function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion, $fechaAtencion, $linkEncuesta = '#') {
-function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion, $fechaAtencion, array $opts = []) {    
+function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion, $fechaAtencion, array $opts = [])
+{
     $mail = new PHPMailer(true);
     try {
-        
+
         // configurarMail($mail, $emailRecibe, $nombreRecibe);
         // Si quieres CC/BCC por envío, pásalos en $opts['cc'] / $opts['bcc'] (arrays de emails)
-        $cc  = isset($opts['cc'])  && is_array($opts['cc'])  ? $opts['cc']  : null;
+        $cc = isset($opts['cc']) && is_array($opts['cc']) ? $opts['cc'] : null;
         $bcc = isset($opts['bcc']) && is_array($opts['bcc']) ? $opts['bcc'] : null;
 
         // Depuración a error_log
-        $mail->SMTPDebug  = 2;
-        $mail->Debugoutput = function($str) { error_log('PHPMailer: ' . $str); };
+        // $mail->SMTPDebug  = 2;
+        // $mail->Debugoutput = function($str) { error_log('PHPMailer: ' . $str); };
+
+        error_log("CONSENT_HTML start for '{$emailRecibe}'");
+        $mail->SMTPDebug = 2;
+        $mail->Debugoutput = function ($str) {
+            error_log('PHPMailer CONSENT: ' . $str); };
 
         configurarMail($mail, $emailRecibe, $nombreRecibe, $cc, $bcc);
 
@@ -428,12 +453,12 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
 
 
         // 1) Si viene linkEncuesta, úsalo; si no, construye token seguro
-        $linkEncuesta = trim((string)($opts['linkEncuesta'] ?? ''));
+        $linkEncuesta = trim((string) ($opts['linkEncuesta'] ?? ''));
         if ($linkEncuesta === '') {
             $idProg = $opts['idProgEncuesta'] ?? null;
             if ($idProg) {
                 // token con 7 días de vigencia (cambia si quieres)
-                $token = make_survey_token((int)$idProg, $emailRecibe, 7*24*3600);
+                $token = make_survey_token((int) $idProg, $emailRecibe, 7 * 24 * 3600);
                 $linkEncuesta = build_survey_link($token);
             } else {
                 $linkEncuesta = '#';
@@ -446,9 +471,9 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         // Sanitización y fallbacks
         $nombreRecibe = $nombreRecibe ?: $emailRecibe;
         $nombreEsc = htmlspecialchars($nombreRecibe, ENT_QUOTES, 'UTF-8');
-        $idEsc     = htmlspecialchars((string)$idAtencion, ENT_QUOTES, 'UTF-8');
-        $fechaEsc  = htmlspecialchars((string)$fechaAtencion, ENT_QUOTES, 'UTF-8');
-        $linkEsc   = htmlspecialchars($linkEncuesta, ENT_QUOTES, 'UTF-8');
+        $idEsc = htmlspecialchars((string) $idAtencion, ENT_QUOTES, 'UTF-8');
+        $fechaEsc = htmlspecialchars((string) $fechaAtencion, ENT_QUOTES, 'UTF-8');
+        $linkEsc = htmlspecialchars($linkEncuesta, ENT_QUOTES, 'UTF-8');
 
         // =========================================================
         // Embebido CID del logo (con tamaño controlado y fallback)
@@ -460,13 +485,16 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         ];
         $logoPath = null;
         foreach ($logoPathCandidates as $cand) {
-            if (is_file($cand) && is_readable($cand)) { $logoPath = realpath($cand); break; }
+            if (is_file($cand) && is_readable($cand)) {
+                $logoPath = realpath($cand);
+                break;
+            }
         }
 
         // Fallback URL pública si no se encuentra archivo local
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $base   = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $base = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
         $publicBase = preg_replace('#/controllers(?:/.*)?$#', '/public', $base);
         $logoUrlFallback = "{$scheme}://{$host}{$publicBase}/img/imbauto-logo.png";
         // URL fija de Política de Privacidad (SharePoint)
@@ -490,7 +518,8 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         if ($logoPath && function_exists('finfo_open')) {
             if ($finfo = finfo_open(FILEINFO_MIME_TYPE)) {
                 $detected = finfo_file($finfo, $logoPath);
-                if ($detected) $mime = $detected;
+                if ($detected)
+                    $mime = $detected;
                 finfo_close($finfo);
             }
         }
@@ -499,14 +528,14 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         $logoImgTag = '';
         if ($logoPath) {
             $cid = 'logoimbauto';
-            $ok  = $mail->addEmbeddedImage($logoPath, $cid, basename($logoPath), 'base64', $mime);
+            $ok = $mail->addEmbeddedImage($logoPath, $cid, basename($logoPath), 'base64', $mime);
             if ($ok) {
-                $logoImgTag = '<img src="cid:'.$cid.'" alt="Imbauto" width="'.$targetW.'" height="'.$targetH.'" style="display:block;border:0;outline:none;text-decoration:none;">';
+                $logoImgTag = '<img src="cid:' . $cid . '" alt="Imbauto" width="' . $targetW . '" height="' . $targetH . '" style="display:block;border:0;outline:none;text-decoration:none;">';
             } else {
-                $logoImgTag = '<img src="'.$logoUrlFallback.'" alt="Imbauto" width="'.$targetW.'" height="'.$targetH.'" style="display:block;border:0;outline:none;text-decoration:none;">';
+                $logoImgTag = '<img src="' . $logoUrlFallback . '" alt="Imbauto" width="' . $targetW . '" height="' . $targetH . '" style="display:block;border:0;outline:none;text-decoration:none;">';
             }
         } else {
-            $logoImgTag = '<img src="'.$logoUrlFallback.'" alt="Imbauto" width="'.$targetW.'" height="'.$targetH.'" style="display:block;border:0;outline:none;text-decoration:none;">';
+            $logoImgTag = '<img src="' . $logoUrlFallback . '" alt="Imbauto" width="' . $targetW . '" height="' . $targetH . '" style="display:block;border:0;outline:none;text-decoration:none;">';
         }
 
         // =======================
@@ -587,17 +616,17 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
 
         // Texto alternativo (solo texto)
         $alt = "Estimado {$nombreRecibe},\n\n"
-             . "Recientemente usted realizó un servicio en Imbauto el día {$fechaEsc} (Atención N.º {$idEsc}).\n"
-             . "Nos gustaría conocer su opinión. Le tomará ~5 minutos completar nuestra encuesta:\n"
-             . "{$linkEncuesta}\n\n"
-             . "¿Qué tan probable es que recomiende a Imbauto a sus familiares o amigos? (0 = Nada probable · 10 = Muy probable)\n\n"
-             . "Gracias por elegir Imbauto.\n"
-             . "Equipo de Experiencia del Cliente – Imbauto S.A.\n";
+            . "Recientemente usted realizó un servicio en Imbauto el día {$fechaEsc} (Atención N.º {$idEsc}).\n"
+            . "Nos gustaría conocer su opinión. Le tomará ~5 minutos completar nuestra encuesta:\n"
+            . "{$linkEncuesta}\n\n"
+            . "¿Qué tan probable es que recomiende a Imbauto a sus familiares o amigos? (0 = Nada probable · 10 = Muy probable)\n\n"
+            . "Gracias por elegir Imbauto.\n"
+            . "Equipo de Experiencia del Cliente – Imbauto S.A.\n";
 
         // $mail->Body    = $mensaje;
         // $mail->AltBody = $alt;
-        $mail->Body    = str_replace(['{$linkEsc}','{$linkEncuesta}'], [$linkEncuesta,$linkEncuesta], $mail->Body);
-        $mail->AltBody = str_replace(['{$linkEsc}','{$linkEncuesta}'], [$linkEncuesta,$linkEncuesta], $mail->AltBody);
+        $mail->Body = str_replace(['{$linkEsc}', '{$linkEncuesta}'], [$linkEncuesta, $linkEncuesta], $mail->Body);
+        $mail->AltBody = str_replace(['{$linkEsc}', '{$linkEncuesta}'], [$linkEncuesta, $linkEncuesta], $mail->AltBody);
 
         // error_log('BODY_LEN=' . strlen($mensaje));
         // error_log('ALT_LEN='  . strlen($alt));
@@ -610,31 +639,31 @@ function enviarEmailEncuestaProgramada($emailRecibe, $nombreRecibe, $idAtencion,
         if (!isset($mail->AltBody) || trim($mail->AltBody) === '') {
             $mail->AltBody = ' ';
         }
-       
+
         // error_log('LINK_ENCUESTA_RESUELTO=' . $linkEncuesta);
-    
-    //     $mail->send();
-    //     return "ok";
-    // } catch (Exception $e) {
-    //     return "Error al enviar correo: " . ($mail->ErrorInfo ?: $e->getMessage());
-    // }
+
+        //     $mail->send();
+        //     return "ok";
+        // } catch (Exception $e) {
+        //     return "Error al enviar correo: " . ($mail->ErrorInfo ?: $e->getMessage());
+        // }
         // error_log('BODY_LEN=' . strlen($mensaje));
         // error_log('ALT_LEN='  . strlen($alt));
 
-// Después de armar $mensaje y $alt, y ANTES de $mail->send():
-$mail->CharSet = 'UTF-8';
-$mail->isHTML(true);
+        // Después de armar $mensaje y $alt, y ANTES de $mail->send():
+        $mail->CharSet = 'UTF-8';
+        $mail->isHTML(true);
 
-// Usa el parser de PHPMailer para HTML (convierte y arma bien multipart/related):
-$mail->msgHTML($mensaje);     // <-- en vez de $mail->Body = $mensaje;
+        // Usa el parser de PHPMailer para HTML (convierte y arma bien multipart/related):
+        $mail->msgHTML($mensaje);     // <-- en vez de $mail->Body = $mensaje;
 
-// Fuerza el texto alternativo que tú ya generas
-$mail->AltBody = $alt;
+        // Fuerza el texto alternativo que tú ya generas
+        $mail->AltBody = $alt;
 
-error_log('PH_BODY_LEN='.strlen($mail->Body).' ALT='.strlen($mail->AltBody));
+        error_log('PH_BODY_LEN=' . strlen($mail->Body) . ' ALT=' . strlen($mail->AltBody));
 
 
-    if (!$mail->send()) {
+        if (!$mail->send()) {
             error_log('PHPMailer SEND FAILED: ' . $mail->ErrorInfo);
             return 'Error al enviar correo: ' . $mail->ErrorInfo;
         }
@@ -646,7 +675,8 @@ error_log('PH_BODY_LEN='.strlen($mail->Body).' ALT='.strlen($mail->AltBody));
 }
 
 
-function enviarEmailPQRSConfirmacion($emailRecibe, $nombreRecibe, $tipo, $numero, $estado, $detalle = '') {
+function enviarEmailPQRSConfirmacion($emailRecibe, $nombreRecibe, $tipo, $numero, $estado, $detalle = '')
+{
     $mail = new PHPMailer(true);
     try {
         configurarMail($mail, $emailRecibe, $nombreRecibe);
@@ -665,11 +695,208 @@ function enviarEmailPQRSConfirmacion($emailRecibe, $nombreRecibe, $tipo, $numero
         IMBAUTO
         EOT;
 
-        $mail->Body    = $mensaje;
+        $mail->Body = $mensaje;
         $mail->AltBody = strip_tags(preg_replace('/<br\s*\/?>/i', "\n", $mensaje));
         $mail->send();
         return "ok";
     } catch (Exception $e) {
         return "Error al enviar correo: " . ($mail->ErrorInfo ?: $e->getMessage());
     }
+
 }
+
+function enviarEmailConsentimientoAceptado(string $emailRecibe, string $nombreRecibe, string $firmaToken, string $fechaISO = '')
+{
+    $mail = new PHPMailer(true);
+    try {
+        configurarMail($mail, $emailRecibe, $nombreRecibe);
+        $mail->Subject = 'Confirmación de consentimiento de datos – Imbauto';
+        $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
+
+        $fechaEsc = htmlspecialchars($fechaISO ?: date('Y-m-d H:i'), ENT_QUOTES, 'UTF-8');
+        $nombreEsc = htmlspecialchars($nombreRecibe ?: $emailRecibe, ENT_QUOTES, 'UTF-8');
+        $firmaEsc = htmlspecialchars($firmaToken, ENT_QUOTES, 'UTF-8');
+
+        $mail->Body = <<<HTML
+        <p>Hola {$nombreEsc},</p>
+        <p>Hemos registrado tu consentimiento para el tratamiento de datos personales el <strong>{$fechaEsc}</strong>.</p>
+        <p><strong>Firma electrónica (token):</strong><br>
+        <code style="word-break:break-all;display:inline-block;padding:8px 10px;background:#f6f7f9;border-radius:6px;">{$firmaEsc}</code></p>
+        <p>Conserva este mensaje para tu respaldo. Gracias por confiar en <strong>Imbauto</strong>.</p>
+        HTML;
+
+        $mail->AltBody = "Hola {$nombreRecibe},\n" .
+            "Consentimiento registrado el {$fechaEsc}.\n" .
+            "Firma electrónica (token): {$firmaToken}\n";
+
+        $mail->send();
+        return "ok";
+    } catch (Exception $e) {
+        return "Error al enviar correo: " . ($mail->ErrorInfo ?: $e->getMessage());
+    }
+}
+
+function enviarEmailConsentimientoHTML(string $emailRecibe, string $nombreRecibe, array $opts = [])
+{
+    error_log("CONSENT_HTML start for '{$emailRecibe}'");
+
+    $mail = new PHPMailer(true);
+    try {
+        // Validación temprana
+        if (empty($emailRecibe) || !filter_var($emailRecibe, FILTER_VALIDATE_EMAIL)) {
+            error_log("CONSENT_HTML: email inválido='{$emailRecibe}'");
+            return 'skip: invalid email';
+        }
+
+        // Debug SMTP temporal (quítalo luego)
+        $mail->SMTPDebug = 2;
+        $mail->Debugoutput = function ($str) {
+            error_log('PHPMailer CONSENT: ' . $str); };
+
+        // CC/BCC opcionales
+        $cc = isset($opts['cc']) && is_array($opts['cc']) ? $opts['cc'] : null;
+        $bcc = isset($opts['bcc']) && is_array($opts['bcc']) ? $opts['bcc'] : null;
+
+        // Configuración SMTP (misma que usas para los otros correos que sí llegan)
+        configurarMail($mail, $emailRecibe, $nombreRecibe, $cc, $bcc);
+
+        $firmaToken = (string) ($opts['firmaToken'] ?? '');
+        $userAgentDesc = (string) ($opts['userAgentDesc'] ?? 'ENCUESTA');
+        $idAtencion = (int) ($opts['idAtencion'] ?? 0);
+        $fechaAtencion = (string) ($opts['fechaAtencion'] ?? '');
+        $detalleAtencion = (string) ($opts['detalleAtencion'] ?? '');
+
+        $mail->Subject = 'Confirmación de consentimiento de datos – Imbauto';
+        $mail->CharSet = 'UTF-8';
+        $mail->isHTML(true);
+
+        // Sanitiza
+        $nombreEsc = htmlspecialchars($nombreRecibe ?: $emailRecibe, ENT_QUOTES, 'UTF-8');
+        $firmaEsc = htmlspecialchars($firmaToken, ENT_QUOTES, 'UTF-8');
+        $uaEsc = htmlspecialchars($userAgentDesc, ENT_QUOTES, 'UTF-8');
+        $idEsc = htmlspecialchars((string) $idAtencion, ENT_QUOTES, 'UTF-8');
+        $fecEsc = htmlspecialchars($fechaAtencion ?: date('Y-m-d H:i'), ENT_QUOTES, 'UTF-8');
+        $detEsc = nl2br(htmlspecialchars($detalleAtencion, ENT_QUOTES, 'UTF-8'));
+
+        // Logo (mismo approach que tu otro mail)
+        $logoPathCandidates = [
+            __DIR__ . '/../public/img/imbauto-logo.png',
+            __DIR__ . '/../../public/img/imbauto-logo.png',
+            __DIR__ . '/public/img/imbauto-logo.png',
+        ];
+        $logoPath = null;
+        foreach ($logoPathCandidates as $cand) {
+            if (is_file($cand) && is_readable($cand)) {
+                $logoPath = realpath($cand);
+                break;
+            }
+        }
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $base = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
+        $publicBase = preg_replace('#/controllers(?:/.*)?$#', '/public', $base);
+        $logoUrlFallback = "{$scheme}://{$host}{$publicBase}/img/imbauto-logo.png";
+
+        $targetW = 260;
+        $targetH = 48;
+        $mime = 'image/png';
+        if ($logoPath && function_exists('getimagesize')) {
+            $info = @getimagesize($logoPath);
+            if ($info && !empty($info[0]) && !empty($info[1]) && $info[0] > 0) {
+                $targetH = (int) round(($info[1] / $info[0]) * $targetW);
+            }
+        }
+        if ($logoPath && function_exists('finfo_open')) {
+            if ($finfo = finfo_open(FILEINFO_MIME_TYPE)) {
+                $detected = finfo_file($finfo, $logoPath);
+                if ($detected)
+                    $mime = $detected;
+                finfo_close($finfo);
+            }
+        }
+        $logoImgTag = '';
+        if ($logoPath) {
+            $cid = 'logoimbauto';
+            $ok = $mail->addEmbeddedImage($logoPath, $cid, basename($logoPath), 'base64', $mime);
+            $logoImgTag = $ok
+                ? '<img src="cid:' . $cid . '" alt="Imbauto" width="' . $targetW . '" height="' . $targetH . '" style="display:block;border:0;outline:none;text-decoration:none;">'
+                : '<img src="' . $logoUrlFallback . '" alt="Imbauto" width="' . $targetW . '" height="' . $targetH . '" style="display:block;border:0;outline:none;text-decoration:none;">';
+        } else {
+            $logoImgTag = '<img src="' . $logoUrlFallback . '" alt="Imbauto" width="' . $targetW . '" height="' . $targetH . '" style="display:block;border:0;outline:none;text-decoration:none;">';
+        }
+
+        $mensaje = <<<HTML
+        <!doctype html>
+        <html lang="es">
+        <body style="margin:0;padding:0;background:#f6f7f9;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7f9;">
+            <tr>
+                <td align="center" style="padding:24px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#111;">
+                    <tr>
+                        <td style="padding:20px 24px;background:#EEF6FA;">{$logoImgTag}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:28px 24px 8px 24px;">
+                            <p style="margin:0 0 12px 0;font-size:16px;">Estimado {$nombreEsc},</p>
+                            <p style="margin:0 0 16px 0;line-height:1.5;font-size:14px;">
+                                Hemos registrado su consentimiento para el tratamiento de datos personales el <strong>{$fecEsc}</strong>.
+                            </p>
+                            <p style="margin:0 0 12px 0;line-height:1.5;font-size:14px;">
+                                <strong>Firma electrónica (token):</strong><br>
+                                <code style="word-break:break-all;display:inline-block;padding:8px 10px;background:#f6f7f9;border-radius:6px;">{$firmaEsc}</code>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 24px 16px 24px;">
+                            <p style="margin:0 0 8px 0;font-weight:bold;font-size:14px;">Referencia de encuesta</p>
+                            <p style="margin:0 0 4px 0;font-size:14px;">{$uaEsc}</p>
+                            <p style="margin:0 0 4px 0;font-size:14px;">Atención N.º <strong>{$idEsc}</strong> — Fecha atención: <strong>{$fecEsc}</strong></p>
+                            <p style="margin:0 0 8px 0;font-weight:bold;font-size:14px;">Detalle de atención</p>
+                            <div style="font-size:13px;line-height:1.5;color:#333;">{$detEsc}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:12px 24px 24px 24px;">
+                            <p style="margin:0;font-size:13px;color:#333;">
+                                Atentamente,<br>
+                                <strong>Equipo de Experiencia del Cliente – Imbauto S.A.</strong>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                </td>
+            </tr>
+            </table>
+        </body>
+        </html>
+        HTML;
+
+        $alt = "Hola {$nombreRecibe},\n" .
+            "Consentimiento registrado el {$fechaAtencion}.\n" .
+            "Firma electrónica (token): {$firmaToken}\n" .
+            "Referencia: {$userAgentDesc}\n" .
+            "Atención #{$idAtencion} - Fecha: {$fechaAtencion}\n" .
+            "Detalle:\n{$detalleAtencion}\n";
+
+        // Preparación y envío
+        $mail->msgHTML($mensaje);
+        $mail->AltBody = $alt;
+
+        error_log("CONSENT_HTML about to send to {$emailRecibe}");
+        if (!$mail->send()) {
+            error_log('CONSENT_HTML send failed: ' . $mail->ErrorInfo);
+            return 'error: ' . $mail->ErrorInfo;
+        }
+        error_log('CONSENT_HTML send OK to ' . $emailRecibe);
+        return 'ok';
+
+    } catch (Exception $e) {
+        error_log('CONSENT_HTML exception: ' . ($mail->ErrorInfo ?: $e->getMessage()));
+        return 'error: ' . ($mail->ErrorInfo ?: $e->getMessage());
+    }
+}
+
+

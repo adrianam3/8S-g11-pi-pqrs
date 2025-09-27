@@ -62,3 +62,19 @@ function build_survey_link(string $token): string {
   $frontend = baseUrlFrontend(); // la que ya usas; p.ej. http://localhost:4200
   return rtrim($frontend, '/').'/encuesta-cliente/enc/'.rawurlencode($token);
 }
+
+
+// security_link.php
+function build_consent_token(int $idCliente, int $idProgEncuesta, string $email=''): string {
+  $secret = getenv('APP_SECRET') ?: 'cambia-esto-en-produccion';
+  $payload = [
+    'cid' => $idCliente,          // cliente
+    'pid' => $idProgEncuesta,     // programación
+    'em'  => hash('sha256', strtolower(trim($email))), // huella (no el email en claro)
+    'iat' => time()
+    // sin exp: la “firma” no expira, a diferencia del link
+  ];
+  $body = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
+  $sig  = rtrim(strtr(base64_encode(hash_hmac('sha256', $body, $secret, true)), '+/', '-_'), '=');
+  return $body.'.'.$sig;
+}
