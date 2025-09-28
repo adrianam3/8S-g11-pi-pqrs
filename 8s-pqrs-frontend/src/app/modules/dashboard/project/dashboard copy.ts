@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
@@ -17,167 +17,61 @@ import { DividerModule } from 'primeng/divider';
 import { TabsModule } from 'primeng/tabs';
 import { SkeletonModule } from 'primeng/skeleton';
 
-/* Chart.js */
+import { ElementRef, ViewChild, HostListener, AfterViewInit } from '@angular/core';
+
+/* Chart.js (auto) */
 import Chart from 'chart.js/auto';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
+import ChartDataLabels from 'chartjs-plugin-datalabels';   // <—
 Chart.register(ChartDataLabels);
-/** -------- NPS Gauge plugin (aguja desde el centro, encima del texto) --------
- * En el chart usa:
- * plugins: { npsGauge: { enabled: true, value: <nps [-100..100]> } }
- */
-const NpsGaugePlugin = {
-  id: 'npsGauge',
+// Chart.register(Dashboard.GaugeNeedlePlugin);
 
-  afterDraw(chart: any) {
-    const opts = (chart?.options as any)?.plugins?.npsGauge;
-    if (!opts?.enabled) return;
 
+
+
+// Plugin global (fuera de la clase)
+const GaugeNeedlePlugin = {
+  id: 'gaugeNeedle',
+  // @ts-ignore
+  afterDatasetDraw(chart: any, args: any, pluginOptions: any) {
+    const value: number = Number(pluginOptions?.value ?? 0); // [-100..100]
     const meta = chart.getDatasetMeta(0);
     const firstArc: any = meta?.data?.[0];
     if (!firstArc) return;
 
-    const { x: cx, y: cy, outerRadius: r, innerRadius: r0 } =
-      firstArc.getProps(['x', 'y', 'outerRadius', 'innerRadius'], true);
+    const { x: cx, y: cy, outerRadius: r } = firstArc.getProps(
+      ['x', 'y', 'outerRadius'],
+      true
+    );
+
+    const t = (Math.min(100, Math.max(-100, value)) + 100) / 200; // 0..1
+    const angle = Math.PI * (1 - t);
+    const needleLen = r * 0.9;
+    const x = cx + Math.cos(angle) * needleLen;
+    const y = cy + Math.sin(angle) * needleLen;
 
     const ctx = chart.ctx;
-
-    // helpers
-    const clamp = (n: number, a: number, b: number) => Math.min(b, Math.max(a, n));
-    // const angleFromValue = (v: number) => {
-    //   const t = (clamp(v, -100, 100) + 100) / 200; // 0..1
-    //   return Math.PI * (1 - t);                    // π..0 (semicírculo)
-    // };
-
-    // Reemplaza tu angleFromValue por esta versión:
-    const angleFromValue = (v: number) => {
-      const t = (Math.min(100, Math.max(-100, v)) + 100) / 200; // 0 .. 1
-      // Mapea: -100 → -π   (izquierda), 0 → -π/2 (arriba), 100 → 0 (derecha)
-      return -Math.PI * (1 - t);
-    };
-
-
-    // estilos comunes
-    const brandBlue = '#1e88e5'; //color aguja
-    // const colorFor = (v: number) => v < -50 ? '#ef4444'
-    //   : v < 0 ? '#f97316'
-    //     : v < 25 ? '#f59e0b'
-    //       : v < 50 ? '#a3e635'
-    //         : v < 75 ? '#22c55e'
-    //           : '#16a34a';
-    // const brandBlue = colorFor(opts.value ?? 0); // color aguja dinámico según valor
-
-
-    const labelFont = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
-
     ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    /* ===== ticks + números (cada 25) ===== */
-    const tickOuter = r * 0.992;
-    const tickInnerMinor = r * 0.94;
-    const tickInnerMajor = r * 0.91;
-
-    for (let v = -100; v <= 100; v += 25) {
-      const a = angleFromValue(v);
-      const cos = Math.cos(a), sin = Math.sin(a);
-
-      const isZero = v === 0;
-      ctx.strokeStyle = '#d1d5db';
-      ctx.lineWidth = isZero ? 2 : 1;
-
-      const xi = cx + cos * (isZero ? tickInnerMajor : tickInnerMinor);
-      const yi = cy + sin * (isZero ? tickInnerMajor : tickInnerMinor);
-      const xo = cx + cos * tickOuter;
-      const yo = cy + sin * tickOuter;
-
-      ctx.beginPath();
-      ctx.moveTo(xi, yi);
-      ctx.lineTo(xo, yo);
-      ctx.stroke();
-
-      ctx.fillStyle = isZero ? '#475569' : '#6b7280';
-      ctx.font = (isZero ? '700 ' : '400 ') + '12px ' + labelFont;
-      const xt = cx + cos * (r0 - 4);
-      const yt = cy + sin * (r0 - 4);
-      ctx.fillText(String(v), xt, yt);
-    }
-
-    /* ===== valor grande + etiqueta ===== */
-    const value = typeof opts.value === 'number' ? Math.round(opts.value) : 0;
-    // colocamos el texto un poco por encima del borde interior del anillo
-    //Subir/bajar el número y la leyenda “NPS”
-    const textY = cy - (r - r0) * 0.35; // <-- altura del número
-
-    ctx.fillStyle = brandBlue;  //color numero 
-    ctx.font = '800 64px ' + labelFont;
-    ctx.fillText(String(value), cx, textY);
-
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '600 20px ' + labelFont;
-    ctx.fillText('NPS', cx, textY - 45); // <-- leyenda debajo del número
-
-    /* ===== aguja desde el centro (DIBUJAR AL FINAL para que quede encima) ===== */
-    const a = angleFromValue(opts.value ?? 0);
-
-    // arranque ligeramente por encima del centro para no tapar el número
-    const startR = r0 * 0.65;     // 35% del radio interior ojo // arranque (un poco dentro)
-    const startX = cx + Math.cos(a) * startR;
-    const startY = cy + Math.sin(a) * startR;
-
-    // punta casi al borde exterior
-    const tipR = r * 0.60;
-    const tipX = cx + Math.cos(a) * tipR;
-    const tipY = cy + Math.sin(a) * tipR;
-
-    // línea de la aguja
-    ctx.shadowColor = 'rgba(30,136,229,0.35)';
-    ctx.shadowBlur = 3;
-    ctx.strokeStyle = brandBlue;  //color aguja
-    ctx.lineWidth = 3;  // grosor de la línea de la aguja
-    ctx.lineCap = 'round';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#111';
+    ctx.fillStyle = '#111';
     ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(tipX, tipY);
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
     ctx.stroke();
-
-    // cabeza triangular
-    const headLen = 10; // largo de la cabecita
-    const headHalf = 7; // ancho de la cabecita
-    const baseX = tipX - Math.cos(a) * headLen;
-    const baseY = tipY - Math.sin(a) * headLen;
-    const nx = Math.cos(a + Math.PI / 2) * headHalf;
-    const ny = Math.sin(a + Math.PI / 2) * headHalf;
-
-    ctx.fillStyle = brandBlue;  //color cabeza aguja
     ctx.beginPath();
-    ctx.moveTo(tipX, tipY);
-    ctx.lineTo(baseX - nx, baseY - ny);
-    ctx.lineTo(baseX + nx, baseY + ny);
-    ctx.closePath();
+    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
     ctx.fill();
-
-    // pivote (en el centro geométrico)
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.fillStyle = '#1f2937';
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-    ctx.fill();
-
     ctx.restore();
   }
 };
 
-/* Registrar una sola vez (evita duplicados en HMR) */
-if (!(Chart as any)._npsGaugeRegistered) {
-  Chart.register(NpsGaugePlugin);
-  (Chart as any)._npsGaugeRegistered = true;
-}
+// Registra el plugin AHORA que ya existe
+Chart.register(GaugeNeedlePlugin);
 
 
-
-/* ===== Servicio ===== */
+/* Servicio */
 import { DashboardService, EncuestaMatrizRow } from '@/modules/Services/dashboard-service';
+// import { EncuestaMatrizRow } from '@/modules/Services/dashboard-service';
 
 type Periodo = 'D' | 'W' | 'M' | 'Q';
 
@@ -195,7 +89,9 @@ interface Overview {
   encuestas_enviadas?: { value: number; delta_pct_vs_prev: number | null };
 }
 
+// interface EncuestasTasa { enviadas: number; respondidas: number; tasa_pct: number; }
 interface EncuestasResumen { programadas: number; enviadas: number; respondidas: number; tasa_pct: number; }
+
 interface PqrsResumen { total: number; abiertos: number; en_proceso: number; escalados: number; cerrados: number; }
 
 @Component({
@@ -210,12 +106,10 @@ interface PqrsResumen { total: number; abiertos: number; en_proceso: number; esc
     TabsModule, TooltipModule, SkeletonModule
   ]
 })
-export class Dashboard implements OnInit, AfterViewInit {
+export class Dashboard implements OnInit {
   /* ===== Filtros ===== */
   startDate: Date | null = null;
   endDate: Date | null = null;
-
-
 
   periodos = [
     { label: 'Diario', value: 'D' },
@@ -235,19 +129,22 @@ export class Dashboard implements OnInit, AfterViewInit {
   kpis: Kpis | null = null;
   overview: Overview | null = null;
 
+  // encuestasTasa: EncuestasTasa | null = null;
   encuestasResumen: EncuestasResumen | null = null;
   pqrsResumen: PqrsResumen | null = null;
 
   encuestasPorCanal: Array<{ segmento: string; programadas: number; enviadas: number; respondidas: number; tasa_pct: number }> = [];
   encuestasPorAgencia: Array<{ segmento: string; programadas: number; enviadas: number; respondidas: number; tasa_pct: number }> = [];
+  // Totales para cada tabla
   totalCanal = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
   totalAgencia = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
+
 
   // Tendencia (línea + barras)
   lineData: any = null;
   lineOptions: any = null;
 
-  // Donut 1..5
+  // Dona distribución (1..5)
   donutData: any = null;
   donutOptions: any = null;
 
@@ -259,66 +156,90 @@ export class Dashboard implements OnInit, AfterViewInit {
   npsBarOptions: any = null;
   cesBarOptions: any = null;
 
-  // PQRs
+  // PQRs por estado
   pqrsEstadoData: any = null;
-  pqrsEstadoOpts: any = null;
-  // === PQRs (listas para tablas) ===
+
+  // Tab activo
+  selectedTabIndex: number = 0; // 0: Encuestas, 1: Satisfacción, 2: PQRs, 3: Evolución
+
+  // Tablas PQRs
   pqrsCat: Array<{ categoria: string; total: number }> = [];
   pqrsCatPadre: Array<{ categoria_padre: string; total: number }> = [];
 
-
-  // Tab activo (0..4)
-  selectedTabIndex = 0;
-
-  // Series EVOLUCIÓN
+  // ====== Series (pestaña EVOLUCIÓN) ======
   seriesCsat: any = null;
   seriesNps: any = null;
   seriesCes: any = null;
   seriesPqrs: any = null;
-  seriesCorr: any = null;
+  seriesCorr: any = null; // mixto CSAT vs PQRs
   seriesLineOpts: any = null;
   seriesMixOpts: any = null;
 
-  // NPS Gauge
+  // === NPS Gauge ===
   npsGaugeData: any = null;
   npsGaugeOptions: any = null;
-
-  /** Verifica si el donut tiene algún dato > 0 */
-  hasDonutData(): boolean {
-    const arr = this.donutData?.datasets?.[0]?.data as number[] | undefined;
-    return Array.isArray(arr) && arr.some(v => Number(v) > 0);
-  }
-
-
-  constructor(private dashboardService: DashboardService) { }
 
   ngAfterViewInit() {
     setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
   }
 
+
+  constructor(private dashboardService: DashboardService) { 
+
+  // Registrar el plugin de la aguja una sola vez
+  if (!(Chart as any)._npsGaugeRegistered) {
+    Chart.register(Dashboard.GaugeNeedlePlugin);
+    (Chart as any)._npsGaugeRegistered = true;
+  }
+
+  }
+
   async ngOnInit(): Promise<void> {
+    // Rango por defecto: mes actual
     const now = new Date();
     this.startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     this.endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const saved = localStorage.getItem('dashboard.activeTab');
-    const idx = Number.isFinite(Number(saved)) ? Math.trunc(Number(saved)) : 0;
-    this.selectedTabIndex = Math.min(Math.max(idx, 0), 4);
+    // // Restaurar tab (como número)
+    // const saved = localStorage.getItem('dashboard.activeTab');
+    // this.selectedTabIndex = saved !== null && !isNaN(parseInt(saved, 10)) ? parseInt(saved, 10) : 0;
 
+    // Restaurar tab (seguro) y acotar a 0..4
+const saved = localStorage.getItem('dashboard.activeTab');
+const parsed = Number(saved);
+const idx = Number.isFinite(parsed) ? Math.trunc(parsed) : 0;
+const MAX_TAB = 4; // 0:Encuestas, 1:Satisfacción, 2:PQRs, 3:Evolución, 4:NPS
+this.selectedTabIndex = Math.min(Math.max(idx, 0), MAX_TAB);
+
+
+    // Cargar datos
     this.refresh();
   }
 
   onPeriodoChange() { this.refresh(); }
   onSegmentChange() { this.refresh(); }
 
-  onTabChange(next: number | string) {
-    const n = typeof next === 'string' ? parseInt(next, 10) : next;
-    this.selectedTabIndex = Number.isFinite(n) ? Math.min(Math.max(n as number, 0), 4) : 0;
-    localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
+  // onTabChange(idx: number | string) {
+  //   const n = typeof idx === 'string' ? parseInt(idx, 10) : idx;
+  //   this.selectedTabIndex = Number.isFinite(n) ? (n as number) : 0;
+  //   localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
 
-    if (this.selectedTabIndex === 3) this.loadSeries();
-    if (this.selectedTabIndex === 4) this.updateNpsGauge(this.kpis?.nps ?? 0);
-  }
+  //   // Cargar series al entrar a "Evolución"
+  //   if (this.selectedTabIndex === 3) {
+  //     this.loadSeries();
+  //   }
+  // }
+
+  onTabChange(next: number | string) {
+  const n = typeof next === 'string' ? parseInt(next, 10) : next;
+  const MAX_TAB = 4;
+  this.selectedTabIndex = Number.isFinite(n) ? Math.min(Math.max(n as number, 0), MAX_TAB) : 0;
+  localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
+
+  if (this.selectedTabIndex === 3) this.loadSeries();
+  if (this.selectedTabIndex === 4) this.updateNpsGauge(this.kpis?.nps ?? 0);
+}
+
 
   /* ===== Carga de datos ===== */
   refresh() {
@@ -330,12 +251,16 @@ export class Dashboard implements OnInit, AfterViewInit {
       .getOverview({ range, period: this.period, segment: this.segment })
       .subscribe((res: any) => this.applyResponse(res));
 
+    // KPIs adicionales
     if (range) {
+
       this.dashboardService.getEncuestasResumen({ range })
         .subscribe(r => this.encuestasResumen = r);
 
+
       this.dashboardService.getPqrsResumen({ range })
         .subscribe(r => this.pqrsResumen = r);
+
 
       this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
         .subscribe(d => {
@@ -351,15 +276,22 @@ export class Dashboard implements OnInit, AfterViewInit {
           setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
         });
 
+
       this.dashboardService.getEncuestasMatriz({ range })
         .subscribe((rows: EncuestaMatrizRow[]) => {
           this.encuestasMatriz = Array.isArray(rows) ? rows : [];
           this.encuestasMatrizTotals = this.computeTotalsSimple(this.encuestasMatriz);
         });
 
-      if (this.selectedTabIndex === 3) this.loadSeries();
+        // this.updateNpsGauge(this.kpis?.nps ?? 0);
+
+      if (this.selectedTabIndex === 3) {
+        this.loadSeries();
+      }
     }
   }
+
+  pqrsEstadoOpts: any = null; // propiedad nueva
 
   private applyResponse(res: any) {
     this.kpis = res.kpis;
@@ -369,7 +301,7 @@ export class Dashboard implements OnInit, AfterViewInit {
     this.lineData = this.mapLineData(res.tendencia);
     this.lineOptions = this.makeLineOptions();
 
-    // Donut
+    // Dona
     this.donutData = this.mapDonutData(res.distribucion15);
     this.donutOptions = this.makeDonutOptions();
 
@@ -384,12 +316,12 @@ export class Dashboard implements OnInit, AfterViewInit {
 
     // PQRs
     this.pqrsEstadoData = this.mapPqrsEstado(res.pqrsPorEstado);
-    this.pqrsEstadoOpts = this.makeBarNumberOptions('', 0);
+    this.pqrsEstadoOpts = this.makeBarNumberOptions('', 0); //<--
     this.pqrsCat = res.pqrsPorCategoria || [];
     this.pqrsCatPadre = res.pqrsPorCategoriaPadre || [];
 
-    // NPS gauge
-    this.updateNpsGauge(this.kpis?.nps ?? 0);
+    this.updateNpsGauge(this.kpis?.nps);
+
   }
 
   /* ===== Helpers ===== */
@@ -398,11 +330,14 @@ export class Dashboard implements OnInit, AfterViewInit {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
+  /* ===== Mapas de datos principales ===== */
   private mapLineData(src: any): any {
     if (!Array.isArray(src) || !src.length) return null;
+
     const labels = src.map((p: any) => String(p?.periodo ?? p?.period ?? p?.fecha ?? ''));
     const sat = src.map((p: any) => Number(p?.satisfaccion_5 ?? p?.satisfaccion ?? p?.avg ?? 0));
     const pqrs = src.map((p: any) => Number(p?.pqrs ?? p?.total ?? p?.cantidad ?? 0));
+
     return {
       labels,
       datasets: [
@@ -412,6 +347,7 @@ export class Dashboard implements OnInit, AfterViewInit {
     };
   }
 
+
   private makeLineOptions() {
     return {
       responsive: true,
@@ -420,6 +356,7 @@ export class Dashboard implements OnInit, AfterViewInit {
       plugins: {
         legend: { position: 'top' },
         datalabels: {
+          // Mostrar valores en línea y barras con formato distinto
           align: (ctx: any) => ctx.dataset.type === 'line' ? 'top' : 'end',
           anchor: (ctx: any) => ctx.dataset.type === 'line' ? 'end' : 'end',
           offset: (ctx: any) => ctx.dataset.type === 'line' ? 4 : 2,
@@ -468,11 +405,12 @@ export class Dashboard implements OnInit, AfterViewInit {
     return { labels, datasets: [{ data, borderWidth: 1 }] };
   }
 
+
   private makeDonutOptions() {
     return {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '60%',
+      cutout: '62%',
       plugins: {
         legend: { position: 'top' },
         datalabels: {
@@ -484,12 +422,14 @@ export class Dashboard implements OnInit, AfterViewInit {
     };
   }
 
+
   private mapSegBar(src: any[], labelKey: string, valueKey: string) {
     if (!Array.isArray(src) || !src.length) return null;
     const labels = src.map((r: any) => String(r?.[labelKey] ?? ''));
     const data = src.map((r: any) => Number(r?.[valueKey] ?? 0));
     return { labels, datasets: [{ label: '', data, borderWidth: 1 }] };
   }
+
 
   private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
     const isPct = mode === '%' || mode === 'nps';
@@ -505,25 +445,31 @@ export class Dashboard implements OnInit, AfterViewInit {
           min: minByMode,
           max: maxByMode,
           grid: { color: 'rgba(0,0,0,.05)' },
-          ticks: { callback: (v: number) => isPct ? `${v}%` : `${v}` }
+          ticks: {
+            // ← eje X en % cuando sea NPS o %
+            callback: (v: number) => isPct ? `${v}%` : `${v}`
+          }
         },
         y: { ticks: { autoSkip: false } }
       },
       plugins: {
         legend: { display: false },
+        // ← etiquetas visibles y “metidas” en el final de la barra
         datalabels: {
           anchor: 'end',
           align: 'end',
-          offset: -50,
-          clamp: true,
+          offset: -50,        // mueve la etiqueta un poco hacia dentro
+          clamp: true,       // evita que se dibuje fuera del chart area
           formatter: (val: number) => {
             if (isPct) return `${val}%`;
+            // para escala 1–5 mostramos 1 decimal si aplica
             return Number.isFinite(val) ? (Math.round(val * 10) / 10).toString() : `${val}`;
           }
         }
       }
     };
   }
+
 
   private mapPqrsEstado(src: any[]) {
     if (!Array.isArray(src) || !src.length) return null;
@@ -536,7 +482,10 @@ export class Dashboard implements OnInit, AfterViewInit {
     this.seriesLineOpts = {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#eee' } } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#eee' } }
+      },
       plugins: {
         legend: { display: true, position: 'top' },
         tooltip: { enabled: true },
@@ -545,6 +494,7 @@ export class Dashboard implements OnInit, AfterViewInit {
           anchor: 'end',
           offset: 4,
           formatter: (v: number, ctx: any) => {
+            // Etiquetas “bonitas” según serie:
             const label = (ctx?.dataset?.label || '').toLowerCase();
             if (label.includes('csat')) return `${this.fmtNum(v, 0)}%`;
             if (label.includes('nps')) return this.fmtNum(v, 0);
@@ -572,7 +522,8 @@ export class Dashboard implements OnInit, AfterViewInit {
           align: (ctx: any) => ctx.dataset.type === 'line' ? 'top' : 'end',
           anchor: 'end',
           offset: (ctx: any) => ctx.dataset.type === 'line' ? 4 : 2,
-          formatter: (v: number, ctx: any) => ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
+          formatter: (v: number, ctx: any) =>
+            ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
         }
       }
     };
@@ -581,7 +532,17 @@ export class Dashboard implements OnInit, AfterViewInit {
   private toLineDataset(rows: Array<{ periodo: string; valor: number }>, label: string) {
     const labels = rows.map(r => r.periodo);
     const data = rows.map(r => Number(r.valor ?? 0));
-    return { labels, datasets: [{ label, data, fill: false, tension: .3, pointRadius: 3, borderWidth: 2 }] };
+    return {
+      labels,
+      datasets: [{
+        label,
+        data,
+        fill: false,
+        tension: .3,
+        pointRadius: 3,
+        borderWidth: 2
+      }]
+    };
   }
 
   private loadSeries() {
@@ -620,9 +581,18 @@ export class Dashboard implements OnInit, AfterViewInit {
       });
   }
 
-  /* ===== Helpers de datalabels ===== */
-  private fmtNum = (v: any, dec = 0) => (typeof v === 'number' && isFinite(v)) ? v.toFixed(dec) : '';
+  /* Template helper */
+  hasDonutData(): boolean {
+    const arr = this.donutData?.datasets?.[0]?.data as any[] | undefined;
+    return Array.isArray(arr) && arr.some(v => Number(v) > 0);
+  }
 
+
+  // ===== Helpers de datalabels =====
+  private fmtNum = (v: any, dec = 0) =>
+    (typeof v === 'number' && isFinite(v)) ? v.toFixed(dec) : '';
+
+  /** Para DONUT: porcentaje de cada porción */
   private donutPctFormatter = (value: number, ctx: any) => {
     const ds = ctx.chart.data.datasets[0];
     const total = (ds?.data as number[]).reduce((a, b) => a + (+b || 0), 0) || 1;
@@ -630,6 +600,7 @@ export class Dashboard implements OnInit, AfterViewInit {
     return `${pct.toFixed(0)}%`;
   };
 
+  /** Datalabels base para barras horizontales/verticales */
   private makeBarNumberOptions(suffix = '', decimals = 0) {
     return {
       responsive: true,
@@ -654,6 +625,7 @@ export class Dashboard implements OnInit, AfterViewInit {
     if (v >= 50) return 'pct-orange';
     return 'pct-red';
   }
+
   pctBadgeClass(p: number | null | undefined): string {
     const v = Number(p ?? 0);
     if (v >= 90) return 'pct-badge pct-green';
@@ -661,51 +633,96 @@ export class Dashboard implements OnInit, AfterViewInit {
     if (v >= 50) return 'pct-badge pct-orange';
     return 'pct-badge pct-red';
   }
+
   fmtPct(v: number | null | undefined): string {
     const n = Number(v ?? 0);
     return `${isFinite(n) ? n.toFixed(0) : '0'}%`;
   }
 
+
   @ViewChild('tblCanal', { read: ElementRef }) tblCanal!: ElementRef;
   @ViewChild('tblAgencia', { read: ElementRef }) tblAgencia!: ElementRef;
-  private rafId: number | null = null;
-  private rowObservers: ResizeObserver[] = [];
+  private rowsSynced = false;
 
-  @HostListener('window:resize') onWinResize() { this.syncRowHeights(); }
+  @HostListener('window:resize')
+  onWinResize() { this.syncRowHeights(); }
+
+  // private syncRowHeights() {
+  //   // asegúrate de que existen ambas tablas ya renderizadas
+  //   if (!this.tblCanal?.nativeElement || !this.tblAgencia?.nativeElement) return;
+
+  //   const leftRows = this.tblCanal.nativeElement.querySelectorAll('tbody tr');
+  //   const rightRows = this.tblAgencia.nativeElement.querySelectorAll('tbody tr');
+
+  //   if (!leftRows.length && !rightRows.length) return;
+
+  //   // limpia alturas previas para recalcular
+  //   leftRows.forEach((r: HTMLElement) => r.style.height = '');
+  //   rightRows.forEach((r: HTMLElement) => r.style.height = '');
+
+  //   const maxLen = Math.max(leftRows.length, rightRows.length);
+  //   for (let i = 0; i < maxLen; i++) {
+  //     const l = leftRows[i] as HTMLElement | undefined;
+  //     const r = rightRows[i] as HTMLElement | undefined;
+  //     const lh = l ? l.getBoundingClientRect().height : 0;
+  //     const rh = r ? r.getBoundingClientRect().height : 0;
+  //     const mh = Math.max(lh, rh);
+  //     if (l) l.style.height = mh + 'px';
+  //     if (r) r.style.height = mh + 'px';
+  //   }
+  // }
+  // private rafId: number | null = null;
+  // private canalObs?: MutationObserver;
+  // private agObs?: MutationObserver;
+  private rafId: number | null = null;
+  private rowObservers: ResizeObserver[] = [];   // ← observadores por fila
 
   private getBodyRows(root: HTMLElement) {
     const tb = root.querySelector('tbody');
     return tb ? Array.from(tb.querySelectorAll('tr')) as HTMLElement[] : [];
   }
+
   private clearRowHeights(rows: HTMLElement[]) {
     rows.forEach(r => {
       r.style.height = '';
       (Array.from(r.children) as HTMLElement[]).forEach(td => td.style.height = '');
     });
   }
+
   private setRowHeight(row: HTMLElement | undefined, h: number) {
     if (!row) return;
     row.style.height = h + 'px';
     (Array.from(row.children) as HTMLElement[]).forEach(td => td.style.height = h + 'px');
   }
+
   private syncRowHeights() {
     if (!this.tblCanal?.nativeElement || !this.tblAgencia?.nativeElement) return;
+
     const L = this.getBodyRows(this.tblCanal.nativeElement);
     const R = this.getBodyRows(this.tblAgencia.nativeElement);
     if (!L.length && !R.length) return;
-    this.clearRowHeights(L); this.clearRowHeights(R);
+
+    // limpiar para medir reales
+    this.clearRowHeights(L);
+    this.clearRowHeights(R);
+
     const maxLen = Math.max(L.length, R.length);
     for (let i = 0; i < maxLen; i++) {
       const l = L[i], r = R[i];
       const lh = l ? l.getBoundingClientRect().height : 0;
       const rh = r ? r.getBoundingClientRect().height : 0;
       const mh = Math.max(lh, rh);
-      this.setRowHeight(l, mh); this.setRowHeight(r, mh);
+      this.setRowHeight(l, mh);
+      this.setRowHeight(r, mh);
     }
   }
+
+  /** Crea ResizeObservers por fila para re-igualar cuando cambie el alto */
   private attachRowResizeObservers() {
+    // limpia observers anteriores
     this.rowObservers.forEach(o => o.disconnect());
     this.rowObservers = [];
+
     if (!this.tblCanal?.nativeElement || !this.tblAgencia?.nativeElement) return;
 
     const L = this.getBodyRows(this.tblCanal.nativeElement);
@@ -724,19 +741,33 @@ export class Dashboard implements OnInit, AfterViewInit {
       if (r) ro.observe(r);
       this.rowObservers.push(ro);
     }
+
+    // primera igualación al enganchar
     schedule();
   }
 
-  encuestasMatriz: EncuestaMatrizRow[] = [];
-  encuestasMatrizTotals = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
-
+  // Calcula totales y tasa global (respondidas/enviadas)
   private computeTotals(list: Array<{ programadas: number; enviadas: number; respondidas: number }>) {
     const programadas = list.reduce((a, b) => a + (Number(b?.programadas) || 0), 0);
     const enviadas = list.reduce((a, b) => a + (Number(b?.enviadas) || 0), 0);
     const respondidas = list.reduce((a, b) => a + (Number(b?.respondidas) || 0), 0);
-    const tasa_pct = enviadas > 0 ? Math.round((respondidas * 10000) / enviadas) / 100 : 0;
+    const tasa_pct = enviadas > 0 ? Math.round((respondidas * 10000) / enviadas) / 100 : 0; // 2 dec.
     return { programadas, enviadas, respondidas, tasa_pct };
   }
+
+
+  // // propiedad para el dataset del nuevo dashboard
+  // encuestasMatriz: Array<{
+  //   idEncuesta: number; encuesta: string; canal: string; agencia: string; estadoEnvio: string;
+  //   programadas: number; enviadas: number; respondidas: number; tasa_pct: number;
+  // }> = [];
+
+  // // totales de la tabla (opcional)
+  // encuestasMatrizTotals = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
+
+  encuestasMatriz: EncuestaMatrizRow[] = [];
+  encuestasMatrizTotals = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
+
   private computeTotalsSimple(list: EncuestaMatrizRow[]) {
     const programadas = list.reduce((a, b) => a + (+b.programadas || 0), 0);
     const enviadas = list.reduce((a, b) => a + (+b.enviadas || 0), 0);
@@ -745,182 +776,85 @@ export class Dashboard implements OnInit, AfterViewInit {
     return { programadas, enviadas, respondidas, tasa_pct };
   }
 
-  // /* ===== NPS gauge ===== */
-  // private updateNpsGauge(nps: number | null | undefined) {
-  //   const val = Number(nps ?? 0);
-  //   const v = Math.min(100, Math.max(-100, isFinite(val) ? val : 0)); // clamp
+  // nps 
 
-  //   // 3 zonas: rojo (-100..-1), amarillo (0..49), verde (50..100)
-  //   // usamos valores iguales (100,100,100) porque el arco es semicircular con total 300
-  //   this.npsGaugeData = {
-  //     labels: ['Bajo', 'Medio', 'Alto'],
-  //     datasets: [
-  //       {
-  //         data: [100, 100, 100],
-  //         borderWidth: 0,
-  //         backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
-  //         hoverBackgroundColor: ['#ef4444', '#f59e0b', '#10b981']
-  //       }
-  //     ]
-  //   };
+  // Plugin simple para dibujar la aguja del gauge
+ static GaugeNeedlePlugin = {
+  id: 'gaugeNeedle',
+  // @ts-ignore
+  afterDatasetDraw(chart: any, args: any, pluginOptions: any) {
+    const value: number = Number(pluginOptions?.value ?? 0); // [-100..100]
+    const meta = chart.getDatasetMeta(0);
+    const firstArc: any = meta?.data?.[0];
+    if (!firstArc) return;
 
-  //   this.npsGaugeOptions = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     rotation: Math.PI,       // inicia a 180°
-  //     circumference: Math.PI,  // 180°
-  //     cutout: '70%',
-  //     plugins: {
-  //       legend: { display: false },
-  //       datalabels: { display: false },
-  //       // activar el plugin SOLO en este chart
-  //       npsGauge: { enabled: true, value: v }
-  //     }
-  //   };
-  // }
+    const { x: cx, y: cy, outerRadius: r, innerRadius: r0 } = firstArc.getProps(
+      ['x', 'y', 'outerRadius', 'innerRadius'],
+      true
+    );
 
-  /* ===== NPS gauge ===== */
-  // private updateNpsGauge(nps: number | null | undefined) {
-  //   const val = Number.isFinite(nps as number) ? Number(nps) : 0;
-  //   const v = Math.max(-100, Math.min(100, val)); // clamp
+    // Semicírculo superior: ángulo π (izq) a 0 (der)
+    const t = (Math.min(100, Math.max(-100, value)) + 100) / 200; // 0..1
+    const angle = Math.PI * (1 - t);
 
-  //   // Fondo fijo: mitad roja (−100..0) y mitad verde (0..100)
-  //   this.npsGaugeData = {
-  //     labels: ['< 0', '≥ 0'],
-  //     datasets: [{
-  //       data: [100, 100],                 // siempre 50/50 (semicírculo)
-  //       borderWidth: 0,
-  //       backgroundColor: ['#ef4444', '#10b981'],
-  //       hoverBackgroundColor: ['#ef4444', '#10b981'],
-  //     }]
-  //   };
+    const needleLen = r * 0.9; // largo de la aguja
+    const x = cx + Math.cos(angle) * needleLen;
+    const y = cy + Math.sin(angle) * needleLen;
 
-  //   //   this.npsGaugeOptions = {
-  //   //     responsive: true,
-  //   //     maintainAspectRatio: false,
-  //   //     // rotation: Math.PI,       // 180°
-  //   //     // circumference: Math.PI,  // semicírculo
-  //   // rotation: -90,          // inicia arriba (top)
-  //   // circumference: 180,     // semicírculo superior
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#111';
+    ctx.fillStyle = '#111';
 
+    // aguja
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.stroke();
 
-  //   //     cutout: '60%',
-  //   //     plugins: {
-  //   //       legend: { display: false },
-  //   //       datalabels: { display: false },
-  //   //       // ← activa el plugin SOLO en este chart y pásale el valor
-  //   //       npsGauge: { enabled: true, value: v }
-  //   //     }
-  //   //   };
-  //   this.npsGaugeOptions = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     rotation: -90,         // <-- grados
-  //     circumference: 180,    // <-- grados
-  //     cutout: '60%',
-  //     plugins: {
-  //       legend: { display: false },
-  //       datalabels: { display: false },
-  //       npsGauge: { enabled: true, value: v }
-  //     }
-  //   };
-
-
-  // }
-
-  // private updateNpsGauge(nps: number | null | undefined) {
-  //   const raw = Number(nps ?? 0);
-  //   const v = Math.min(100, Math.max(-100, isFinite(raw) ? raw : 0));
-
-  //   // 8 segmentos (−100..100 en saltos de 25) con degradado rojo→verde
-  //   const SEGMENTS = 8;
-  //   this.npsGaugeData = {
-  //     labels: Array.from({ length: SEGMENTS }, () => ''),
-  //     datasets: [{
-  //       // todos iguales; el total del semicírculo da lo mismo mientras sean uniformes
-  //       data: Array.from({ length: SEGMENTS }, () => 100),
-  //       borderWidth: 8,                 // separadores blancos entre segmentos
-  //       borderColor: '#ffffff',
-  //       borderJoinStyle: 'round' as const,
-  //       borderRadius: 10,               // puntas suaves
-  //       backgroundColor: [
-  //         '#ef4444', '#f97316', '#f59e0b', '#facc15',
-  //         '#a3e635', '#86efac', '#22c55e', '#16a34a'
-  //       ],
-  //       hoverBackgroundColor: [
-  //         '#ef4444', '#f97316', '#f59e0b', '#facc15',
-  //         '#a3e635', '#86efac', '#22c55e', '#16a34a'
-  //       ]
-  //     }]
-  //   };
-
-  //   this.npsGaugeOptions = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     rotation: -90,          // grados: empieza arriba
-  //     circumference: 180,     // grados: semicírculo
-  //     cutout: '65%',          // grosor del anillo
-  //     layout: { padding: { top: 8, bottom: 0 } },
-  //     plugins: {
-  //       legend: { display: false },
-  //       datalabels: { display: false },
-  //       // Activamos SÓLO para este gráfico
-  //       npsGauge: { enabled: true, value: v }
-  //     }
-  //   };
-  // }
-  private updateNpsGauge(nps: number | null | undefined) {
-    const raw = Number(nps ?? 0);
-    const v = Math.min(100, Math.max(-100, isFinite(raw) ? raw : 0));
-
-    // 8 segmentos uniformes
-    this.npsGaugeData = {
-      labels: Array.from({ length: 8 }, () => ''),
-      datasets: [{
-        data: Array.from({ length: 8 }, () => 100),
-        borderWidth: 8,
-        borderColor: '#ffffff',
-        borderJoinStyle: 'round' as const,
-        borderRadius: 10,
-        backgroundColor: [
-          '#ef4444', '#f97316', '#f59e0b', '#facc15',
-          '#a3e635', '#86efac', '#22c55e', '#16a34a'
-        ],
-        hoverBackgroundColor: [
-          '#ef4444', '#f97316', '#f59e0b', '#facc15',
-          '#a3e635', '#86efac', '#22c55e', '#16a34a'
-        ]
-      }]
-    };
-
-    // // OJO: Chart.js usa GRADOS aquí
-    // this.npsGaugeOptions = {
-    //   responsive: true,
-    //   maintainAspectRatio: false,
-    //   rotation: -90,      // empieza arriba (grados)
-    //   circumference: 180, // semicírculo (grados)
-    //   cutout: '65%',
-    //   plugins: {
-    //     legend: { display: false },
-    //     datalabels: { display: false },
-    //     npsGauge: { enabled: true, value: v } // activa nuestro plugin
-    //   }
-    // } as any;
-
-    this.npsGaugeOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      rotation: -90,        // semicírculo superior (en grados; si ya te funciona, déjalo)
-      circumference: 180,
-      cutout: '65%',
-      plugins: {
-        legend: { display: false },
-        datalabels: { display: false },
-        npsGauge: { enabled: true, value: v } // <-- activa aguja y envía valor
-      }
-    };
-
+    // pivote
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
+};
+
+private updateNpsGauge(nps: number | null | undefined) {
+  const val = Number(nps ?? 0);
+  const v = Math.min(100, Math.max(-100, isFinite(val) ? val : 0)); // clamp
+  const filled = v + 100;     // 0..200
+  const rest = 200 - filled;  // 200 total (−100..100)
+
+  this.npsGaugeData = {
+    labels: ['NPS', ''],
+    datasets: [
+      {
+        data: [filled, rest],
+        borderWidth: 0,
+        // colores: “valor” y “restante”
+        backgroundColor: ['#10b981', '#e5e7eb'],
+        hoverBackgroundColor: ['#10b981', '#e5e7eb'],
+      }
+    ]
+  };
+
+  this.npsGaugeOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    // Semicírculo superior
+    rotation: Math.PI,       // empieza a 180°
+    circumference: Math.PI,  // 180°
+    cutout: '70%',
+    plugins: {
+      legend: { display: false },
+      datalabels: { display: false },
+      // pasamos el valor al plugin de la aguja
+      gaugeNeedle: { value: v }
+    }
+  };
+}
 
 
 }

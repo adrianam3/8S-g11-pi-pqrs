@@ -37,6 +37,13 @@
         [ngClass]="{ 'is-active': selectedTabIndex === 3 }">
         <i class="pi pi-chart-line mr-2"></i>Evolución
       </button>
+      <button p-tab [value]="4" type="button" (click)="onTabChange(4)"
+        [ngClass]="{ 'is-active': selectedTabIndex === 4 }">
+        <i class="pi pi-gauge mr-2"></i>NPS
+      </button>
+
+
+
     </p-tablist>
 
     <p-tabpanels>
@@ -129,7 +136,8 @@
                         <td class="num">{{ totalAgencia.enviadas }}</td>
                         <td class="num">{{ totalAgencia.respondidas }}</td>
                         <td class="num">
-                          <span [ngClass]="pctBadgeClass(totalAgencia.tasa_pct)">{{ fmtPct(totalAgencia.tasa_pct) }}</span>
+                          <span [ngClass]="pctBadgeClass(totalAgencia.tasa_pct)">{{ fmtPct(totalAgencia.tasa_pct)
+                            }}</span>
                         </td>
                       </tr>
                     </ng-template>
@@ -545,6 +553,68 @@
           <div class="empty-state">Sin datos para el período seleccionado</div>
         </ng-template>
       </p-tabpanel>
+
+
+<!-- ========== 4: NPS (gauge) ========== -->
+<p-tabpanel [value]="4">
+  <div class="grid">
+    <div class="col-12 lg:col-6">
+      <p-card header="NPS (−100 a 100)" class="eq-card">
+        <div class="chart-holder chart-300">
+          <p-chart type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions"></p-chart>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-6">
+      <p-card header="Detalle NPS" class="eq-card">
+        <ul class="kpi-list">
+          <li>
+            <div class="kpi-left">
+              <div class="kpi-name">NPS</div>
+              <div class="kpi-sub">Promotores − Detractores</div>
+            </div>
+            <div class="kpi-right">
+              <span class="kpi-pct">{{ kpis?.nps ?? 0 }}</span>
+              <p-progressBar [value]="((kpis?.nps ?? 0) + 100) / 2"></p-progressBar>
+              <!-- mapeo: −100..100 → 0..100 -->
+            </div>
+          </li>
+          <li>
+            <div class="kpi-left">
+              <div class="kpi-name">Promotores</div>
+            </div>
+            <div class="kpi-right">
+              <span class="kpi-pct">{{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}%</span>
+              <p-progressBar [value]="kpis?.nps_breakdown?.promotores_pct ?? 0"></p-progressBar>
+            </div>
+          </li>
+          <li>
+            <div class="kpi-left">
+              <div class="kpi-name">Pasivos</div>
+            </div>
+            <div class="kpi-right">
+              <span class="kpi-pct">{{ kpis?.nps_breakdown?.pasivos_pct ?? 0 }}%</span>
+              <p-progressBar [value]="kpis?.nps_breakdown?.pasivos_pct ?? 0"></p-progressBar>
+            </div>
+          </li>
+          <li>
+            <div class="kpi-left">
+              <div class="kpi-name">Detractores</div>
+            </div>
+            <div class="kpi-right">
+              <span class="kpi-pct">{{ kpis?.nps_breakdown?.detractores_pct ?? 0 }}%</span>
+              <p-progressBar [value]="kpis?.nps_breakdown?.detractores_pct ?? 0"></p-progressBar>
+            </div>
+          </li>
+        </ul>
+      </p-card>
+    </div>
+  </div>
+</p-tabpanel>
+
+
+
     </p-tabpanels>
   </p-tabs>
 </div>

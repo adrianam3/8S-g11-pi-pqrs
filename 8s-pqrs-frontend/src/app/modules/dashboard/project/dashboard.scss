@@ -771,3 +771,13 @@
 :host ::ng-deep .seg-table table {
   table-layout: fixed;
 }
+
+
+/* dashboard.scss */
+.tablist-scroll {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;   /* <- clave para que no se recorte */
+  padding-bottom: .25rem;
+}
+.tablist-scroll::-webkit-scrollbar { height: 6px; }

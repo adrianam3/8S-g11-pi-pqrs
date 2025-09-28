@@ -37,6 +37,10 @@
         [ngClass]="{ 'is-active': selectedTabIndex === 3 }">
         <i class="pi pi-chart-line mr-2"></i>Evolución
       </button>
+      <button p-tab [value]="4" type="button" (click)="onTabChange(4)"
+        [ngClass]="{ 'is-active': selectedTabIndex === 4 }">
+        <i class="pi pi-gauge mr-2"></i>NPS
+      </button>
     </p-tablist>
 
     <p-tabpanels>
@@ -167,50 +171,49 @@
         </div>
 
 
-<div class="col-12">
-  <p-card header="Matriz de encuestas (Encuesta / Canal / Agencia)" class="eq-card">
-    <p-table [value]="encuestasMatriz" responsiveLayout="scroll" class="seg-table">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>Encuesta</th>
-          <th>Canal</th>
-          <th>Agencia</th>
-          <th>Estado envío</th>
-          <th class="text-right">Programadas</th>
-          <th class="text-right">Enviadas</th>
-          <th class="text-right">Respondidas</th>
-          <th class="text-right">Tasa %</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-r>
-        <tr>
-          <td>{{ r.encuesta }}</td>
-          <td>{{ r.canal }}</td>
-          <td>{{ r.agencia }}</td>
-          <td>{{ r.estadoEnvio }}</td>
-          <td class="num">{{ r.programadas }}</td>
-          <td class="num">{{ r.enviadas }}</td>
-          <td class="num">{{ r.respondidas }}</td>
-          <td class="num"><span [ngClass]="pctBadgeClass(r.tasa_pct)">{{ fmtPct(r.tasa_pct) }}</span></td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="footer">
-        <tr>
-          <td colspan="4" class="text-right"><strong>Totales</strong></td>
-          <td class="num"><strong>{{ encuestasMatrizTotals.programadas }}</strong></td>
-          <td class="num"><strong>{{ encuestasMatrizTotals.enviadas }}</strong></td>
-          <td class="num"><strong>{{ encuestasMatrizTotals.respondidas }}</strong></td>
-          <td class="num">
-            <span [ngClass]="pctBadgeClass(encuestasMatrizTotals.tasa_pct)">
-              {{ fmtPct(encuestasMatrizTotals.tasa_pct) }}
-            </span>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </p-card>
-</div>
-
+        <div class="col-12">
+          <p-card header="Matriz de encuestas (Encuesta / Canal / Agencia)" class="eq-card">
+            <p-table [value]="encuestasMatriz" responsiveLayout="scroll" class="seg-table">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Encuesta</th>
+                  <th>Canal</th>
+                  <th>Agencia</th>
+                  <th>Estado envío</th>
+                  <th class="text-right">Programadas</th>
+                  <th class="text-right">Enviadas</th>
+                  <th class="text-right">Respondidas</th>
+                  <th class="text-right">Tasa %</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-r>
+                <tr>
+                  <td>{{ r.encuesta }}</td>
+                  <td>{{ r.canal }}</td>
+                  <td>{{ r.agencia }}</td>
+                  <td>{{ r.estadoEnvio }}</td>
+                  <td class="num">{{ r.programadas }}</td>
+                  <td class="num">{{ r.enviadas }}</td>
+                  <td class="num">{{ r.respondidas }}</td>
+                  <td class="num"><span [ngClass]="pctBadgeClass(r.tasa_pct)">{{ fmtPct(r.tasa_pct) }}</span></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="footer">
+                <tr>
+                  <td colspan="4" class="text-right"><strong>Totales</strong></td>
+                  <td class="num"><strong>{{ encuestasMatrizTotals.programadas }}</strong></td>
+                  <td class="num"><strong>{{ encuestasMatrizTotals.enviadas }}</strong></td>
+                  <td class="num"><strong>{{ encuestasMatrizTotals.respondidas }}</strong></td>
+                  <td class="num">
+                    <span [ngClass]="pctBadgeClass(encuestasMatrizTotals.tasa_pct)">
+                      {{ fmtPct(encuestasMatrizTotals.tasa_pct) }}
+                    </span>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        </div>
 
 
 
@@ -508,6 +511,82 @@
           <div class="empty-state">Sin datos para el período seleccionado</div>
         </ng-template>
       </p-tabpanel>
+
+
+
+      <!-- ========== 4: NPS (gauge) ========== -->
+      <p-tabpanel [value]="4">
+        <div class="grid">
+          <div class="col-12 lg:col-6">
+            <p-card header="NPS (−100 a 100)" class="eq-card">
+              <div class="chart-holder chart-300">
+                <!-- <p-chart type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions"></p-chart> -->
+
+                <!-- <p-chart *ngIf="npsGaugeData"
+                     type="doughnut"
+                     [data]="npsGaugeData"
+                     [options]="npsGaugeOptions"></p-chart> -->
+                <!-- <p-chart *ngIf="npsGaugeData" type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions">
+                </p-chart> -->
+                <p-chart *ngIf="npsGaugeData && npsGaugeOptions" type="doughnut" [data]="npsGaugeData"
+                  [options]="npsGaugeOptions">
+                </p-chart>
+
+              </div>
+            </p-card>
+          </div>
+
+          <div class="col-12 lg:col-6">
+            <p-card header="Detalle NPS" class="eq-card">
+              <ul class="kpi-list">
+                <li>
+                  <div class="kpi-left">
+                    <div class="kpi-name">NPS</div>
+                    <div class="kpi-sub">Promotores − Detractores</div>
+                  </div>
+                  <div class="kpi-right">
+                    <span class="kpi-pct">{{ kpis?.nps ?? 0 }}</span>
+                    <!-- <p-progressBar [value]="((kpis?.nps ?? 0) + 100) / 2"></p-progressBar> -->
+                    <!-- mapeo: −100..100 → 0..100 -->
+                  </div>
+                </li>
+                <li>
+                  <div class="kpi-left">
+                    <div class="kpi-name">Promotores</div>
+                  </div>
+                  <div class="kpi-right">
+                    <span class="kpi-pct">{{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}%</span>
+                    <p-progressBar [value]="kpis?.nps_breakdown?.promotores_pct ?? 0"></p-progressBar>
+                  </div>
+                </li>
+                <li>
+                  <div class="kpi-left">
+                    <div class="kpi-name">Pasivos</div>
+                  </div>
+                  <div class="kpi-right">
+                    <span class="kpi-pct">{{ kpis?.nps_breakdown?.pasivos_pct ?? 0 }}%</span>
+                    <p-progressBar [value]="kpis?.nps_breakdown?.pasivos_pct ?? 0"></p-progressBar>
+                  </div>
+                </li>
+                <li>
+                  <div class="kpi-left">
+                    <div class="kpi-name">Detractores</div>
+                  </div>
+                  <div class="kpi-right">
+                    <span class="kpi-pct">{{ kpis?.nps_breakdown?.detractores_pct ?? 0 }}%</span>
+                    <p-progressBar [value]="kpis?.nps_breakdown?.detractores_pct ?? 0"></p-progressBar>
+                  </div>
+                </li>
+              </ul>
+            </p-card>
+          </div>
+        </div>
+      </p-tabpanel>
+
+
+
+
+
     </p-tabpanels>
   </p-tabs>
 </div>
