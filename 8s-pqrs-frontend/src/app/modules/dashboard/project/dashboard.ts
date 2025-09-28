@@ -15,6 +15,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { PanelModule } from 'primeng/panel';
 import { DividerModule } from 'primeng/divider';
 import { TabsModule } from 'primeng/tabs';
+import { SkeletonModule } from 'primeng/skeleton';
 
 import { ElementRef, ViewChild, HostListener, AfterViewInit } from '@angular/core';
 
@@ -57,7 +58,7 @@ interface PqrsResumen { total: number; abiertos: number; en_proceso: number; esc
     CommonModule, FormsModule,
     ToolbarModule, DatePickerModule, SelectModule, ButtonModule,
     CardModule, ChartModule, TableModule, ProgressBarModule, PanelModule, DividerModule,
-    TabsModule, TooltipModule
+    TabsModule, TooltipModule, SkeletonModule
   ]
 })
 export class Dashboard implements OnInit {
@@ -185,59 +186,7 @@ export class Dashboard implements OnInit {
         .subscribe(r => this.pqrsResumen = r);
 
 
-
-      // // ⬇️ AQUI: cargar filas nuevas por CANAL y por AGENCIA
-      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
-      //   .subscribe(d => this.encuestasPorCanal = d ?? []);
-
-      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
-      //   .subscribe(d => this.encuestasPorAgencia = d ?? []);
-
-
-
-
-      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
-      //   .subscribe(d => {
-      //     this.encuestasPorCanal = d ?? [];
-      //     setTimeout(() => this.syncRowHeights(), 0);
-      //   });
-
-      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
-      //   .subscribe(d => {
-      //     this.encuestasPorAgencia = d ?? [];
-      //     setTimeout(() => this.syncRowHeights(), 0);
-      //   });
-
-
-      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
-      //   .subscribe(d => {
-      //     this.encuestasPorCanal = d ?? [];
-      //     // esperar al render del tbody
-      //     setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
-      //   });
-
-      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
-      //   .subscribe(d => {
-      //     this.encuestasPorAgencia = d ?? [];
-      //     setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
-      //   });
-
-
-      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
-      //   .subscribe(d => {
-      //     this.encuestasPorCanal = d ?? [];
-      //     this.totalCanal = this.computeTotals(this.encuestasPorCanal);
-      //     setTimeout(() => this.syncRowHeights(), 0);
-      //   });
-
-      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
-      //   .subscribe(d => {
-      //     this.encuestasPorAgencia = d ?? [];
-      //     this.totalAgencia = this.computeTotals(this.encuestasPorAgencia);
-      //     setTimeout(() => this.syncRowHeights(), 0);
-      //   });
-
-      this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
+   this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
   .subscribe(d => {
     this.encuestasPorCanal = d ?? [];
     this.totalCanal = this.computeTotals(this.encuestasPorCanal);
