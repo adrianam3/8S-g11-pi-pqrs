@@ -199,6 +199,52 @@ switch ($_GET["op"] ?? '') {
         else { http_response_code(404); echo json_encode(["message"=>"No se encontraron respuestas.", "data"=>[]]); }
         break;
 
+    case 'guardar_lote':
+    try {
+        $raw = file_get_contents('php://input');
+        $body = json_decode($raw, true);
+
+        if (!is_array($body)) {
+            http_response_code(400);
+            echo json_encode(["success"=>false, "message"=>"JSON inválido"]);
+            break;
+        }
+
+        $idProgEncuesta = isset($body['idProgEncuesta']) ? (int)$body['idProgEncuesta'] : null;
+        $respuestas     = isset($body['respuestas']) && is_array($body['respuestas']) ? $body['respuestas'] : null;
+
+        if (!$idProgEncuesta || !$respuestas || count($respuestas) === 0) {
+            http_response_code(400);
+            echo json_encode(["success"=>false, "message"=>"idProgEncuesta y respuestas son requeridos"]);
+            break;
+        }
+
+        // atomic=true => si una falla, se hace rollback
+        $atomic = isset($body['atomic']) ? (bool)$body['atomic'] : true;
+
+        $result = $model->insertarLote($idProgEncuesta, $respuestas, $atomic);
+
+        if ($result['success']) {
+            echo json_encode([
+                "success" => true,
+                "insertados" => $result['insertados'],
+                "message" => $result['message']
+            ]);
+        } else {
+            http_response_code(409);
+            echo json_encode([
+                "success" => false,
+                "message" => $result['message'],
+                "errores" => $result['errores'] ?? []
+            ]);
+        }
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(["success"=>false, "message"=>"Error inesperado", "error"=>$e->getMessage()]);
+    }
+    break;
+
+
     default:
         http_response_code(400);
         echo json_encode(["message" => "Operación no soportada. Usa op=todos|uno|insertar|upsert|actualizar|eliminar|activar|desactivar|contar|porProgramacion"]);

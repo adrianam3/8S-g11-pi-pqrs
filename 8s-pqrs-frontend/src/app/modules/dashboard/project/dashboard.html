@@ -83,6 +83,138 @@
             </p-card>
           </div>
         </div>
+        <div class="grid">
+
+          <!-- Fila: Detalle por Segmento (dos columnas 50/50) -->
+          <div class="grid equalize-cards">
+            <!-- Izquierda: CANAL -->
+            <div class="col-12 md:col-6 eq-col">
+              <p-card header="Detalle por Canal" class="eq-card fill-card">
+                <p-table #tblCanal [value]="encuestasPorCanal" responsiveLayout="scroll" class="seg-table">
+                  <ng-template pTemplate="header">
+                    <tr>
+                      <th>Segmento</th>
+                      <th class="text-right">Programadas</th>
+                      <th class="text-right">Enviadas</th>
+                      <th class="text-right">Respondidas</th>
+                      <th class="text-right">Tasa %</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="body" let-r>
+                    <tr>
+                      <td class="seg-name">{{ r.segmento }}</td>
+                      <td class="num">{{ r.programadas }}</td>
+                      <td class="num">{{ r.enviadas }}</td>
+                      <td class="num">{{ r.respondidas }}</td>
+                      <td class="num"><span [ngClass]="pctBadgeClass(r.tasa_pct)">{{ fmtPct(r.tasa_pct) }}</span></td>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="footer">
+                    <tr class="totals-row">
+                      <td class="seg-name">Total</td>
+                      <td class="num">{{ totalAgencia.programadas }}</td>
+                      <td class="num">{{ totalAgencia.enviadas }}</td>
+                      <td class="num">{{ totalAgencia.respondidas }}</td>
+                      <td class="num">
+                        <span [ngClass]="pctBadgeClass(totalAgencia.tasa_pct)">{{ fmtPct(totalAgencia.tasa_pct)
+                          }}</span>
+                      </td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+              </p-card>
+            </div>
+
+            <!-- Derecha: AGENCIA -->
+            <div class="col-12 md:col-6 eq-col">
+              <p-card header="Detalle por Agencia" class="eq-card fill-card">
+                <p-table #tblAgencia [value]="encuestasPorAgencia" responsiveLayout="scroll" class="seg-table">
+                  <ng-template pTemplate="header">
+                    <tr>
+                      <th>Segmento</th>
+                      <th class="text-right">Programadas</th>
+                      <th class="text-right">Enviadas</th>
+                      <th class="text-right">Respondidas</th>
+                      <th class="text-right">Tasa %</th>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="body" let-r>
+                    <tr>
+                      <td class="seg-name">{{ r.segmento }}</td>
+                      <td class="num">{{ r.programadas }}</td>
+                      <td class="num">{{ r.enviadas }}</td>
+                      <td class="num">{{ r.respondidas }}</td>
+                      <td class="num"><span [ngClass]="pctBadgeClass(r.tasa_pct)">{{ fmtPct(r.tasa_pct) }}</span></td>
+                    </tr>
+                  </ng-template>
+
+                  <ng-template pTemplate="footer">
+                    <tr class="totals-row">
+                      <td class="seg-name">Total</td>
+                      <td class="num">{{ totalCanal.programadas }}</td>
+                      <td class="num">{{ totalCanal.enviadas }}</td>
+                      <td class="num">{{ totalCanal.respondidas }}</td>
+                      <td class="num">
+                        <span [ngClass]="pctBadgeClass(totalCanal.tasa_pct)">{{ fmtPct(totalCanal.tasa_pct) }}</span>
+                      </td>
+                    </tr>
+                  </ng-template>
+
+                </p-table>
+              </p-card>
+            </div>
+          </div>
+        </div>
+
+
+<div class="col-12">
+  <p-card header="Matriz de encuestas (Encuesta / Canal / Agencia)" class="eq-card">
+    <p-table [value]="encuestasMatriz" responsiveLayout="scroll" class="seg-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Encuesta</th>
+          <th>Canal</th>
+          <th>Agencia</th>
+          <th>Estado envío</th>
+          <th class="text-right">Programadas</th>
+          <th class="text-right">Enviadas</th>
+          <th class="text-right">Respondidas</th>
+          <th class="text-right">Tasa %</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>{{ r.encuesta }}</td>
+          <td>{{ r.canal }}</td>
+          <td>{{ r.agencia }}</td>
+          <td>{{ r.estadoEnvio }}</td>
+          <td class="num">{{ r.programadas }}</td>
+          <td class="num">{{ r.enviadas }}</td>
+          <td class="num">{{ r.respondidas }}</td>
+          <td class="num"><span [ngClass]="pctBadgeClass(r.tasa_pct)">{{ fmtPct(r.tasa_pct) }}</span></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr>
+          <td colspan="4" class="text-right"><strong>Totales</strong></td>
+          <td class="num"><strong>{{ encuestasMatrizTotals.programadas }}</strong></td>
+          <td class="num"><strong>{{ encuestasMatrizTotals.enviadas }}</strong></td>
+          <td class="num"><strong>{{ encuestasMatrizTotals.respondidas }}</strong></td>
+          <td class="num">
+            <span [ngClass]="pctBadgeClass(encuestasMatrizTotals.tasa_pct)">
+              {{ fmtPct(encuestasMatrizTotals.tasa_pct) }}
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+
+
+
+
       </p-tabpanel>
 
       <!-- ========== 1: SATISFACCIÓN ========== -->
@@ -273,8 +405,7 @@
             <p-card header="PQRs por estado">
               <div style="height:260px">
                 <!-- <p-chart type="bar" [data]="pqrsEstadoData" [options]="{ responsive:true, maintainAspectRatio:false }" -->
-                 <p-chart type="bar" [data]="pqrsEstadoData" [options]="pqrsEstadoOpts"
-                  *ngIf="pqrsEstadoData"></p-chart>
+                <p-chart type="bar" [data]="pqrsEstadoData" [options]="pqrsEstadoOpts" *ngIf="pqrsEstadoData"></p-chart>
               </div>
             </p-card>
           </div>

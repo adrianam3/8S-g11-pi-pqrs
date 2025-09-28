@@ -593,3 +593,181 @@
 :host ::ng-deep .p-card .p-card-header {
   padding: .75rem 1rem .5rem; /* top, lados, bottom */
 }
+
+// 27/09/2025
+
+/* Lista tipo "Best Selling Products" */
+.kpi-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  .kpi-left {
+    min-width: 0; /* por si el nombre es largo */
+  }
+
+  .kpi-name {
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .kpi-sub {
+    font-size: .85rem;
+    opacity: .7;
+    margin-top: .2rem;
+  }
+
+  .kpi-right {
+    width: 180px; /* ancho fijo para barra y % */
+    text-align: right;
+
+    .kpi-pct {
+      display: block;
+      font-weight: 600;
+      margin-bottom: .25rem;
+    }
+
+    /* afina altura de la barra */
+    :host ::ng-deep .p-progressbar {
+      height: .5rem;
+    }
+  }
+}
+
+/* Colores de barra según clase */
+:host ::ng-deep .pct-green .p-progressbar .p-progressbar-value { background: var(--green-500); }
+:host ::ng-deep .pct-teal  .p-progressbar .p-progressbar-value { background: var(--teal-500); }
+:host ::ng-deep .pct-orange .p-progressbar .p-progressbar-value { background: var(--orange-500); }
+:host ::ng-deep .pct-red    .p-progressbar .p-progressbar-value { background: var(--red-500); }
+
+/* Tabla de detalle por segmento */
+:host ::ng-deep .seg-table {
+  .p-datatable-thead > tr > th {
+    font-weight: 700;
+    font-size: .85rem;
+    letter-spacing: .02em;
+    background: var(--surface-ground);
+  }
+  .p-datatable-tbody > tr > td {
+    padding: .9rem .75rem;
+    border-color: var(--surface-border);
+  }
+  .seg-name { font-weight: 700; color: var(--text-color); }
+  .num { text-align: right; }
+}
+
+/* Pastillas de porcentaje (Tasa %) */
+.pct-badge {
+  display: inline-block;
+  min-width: 48px;
+  text-align: center;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: .85rem;
+  line-height: 1.1;
+}
+
+.pct-green  { color: #0f5132; background: #d1e7dd; }
+.pct-teal   { color: #0b525b; background: #cfeffd; }
+.pct-orange { color: #664d03; background: #fff3cd; }
+.pct-red    { color: #842029; background: #f8d7da; }
+
+/* Utilitarios */
+.text-right { text-align: right; }
+
+//
+// /* asegúrate de que las filas acepten altura explícita */
+// :host ::ng-deep .seg-table .p-datatable-tbody > tr {
+//   height: auto; /* por si algún tema fija otra cosa */
+// }
+:host ::ng-deep .seg-table .p-datatable-tbody > tr { height: auto; }
+
+:host ::ng-deep .seg-table table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+
+/* Que la tabla no “salte” y mida bien */
+:host ::ng-deep .seg-table table { table-layout: fixed; width: 100%; }
+:host ::ng-deep .seg-table .p-datatable-tbody > tr > td {
+  vertical-align: top;          /* si hay wrap, crece hacia abajo */
+  word-break: break-word;       /* evita overflow con textos largos */
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .seg-table .p-datatable-tbody > tr > td {
+    padding: .6rem .5rem;
+  }
+}
+
+:host ::ng-deep .seg-table .p-datatable-wrapper {
+  max-height: 420px;       /* ajusta si quieres */
+  overflow: auto;
+}
+:host ::ng-deep .seg-table .p-datatable-thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+
+/* Igualar altura de las dos tarjetas (canal/agencia) */
+.equalize-cards { align-items: stretch; }              /* estira las columnas */
+.equalize-cards > .eq-col { display: flex; }           /* columna = flex item */
+.equalize-cards .fill-card {                           /* card ocupa 100% */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+:host ::ng-deep .equalize-cards .fill-card .p-card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;                                        /* cuerpo estira */
+}
+
+
+/* Igualar altura de las 2 tarjetas (CANAL / AGENCIA) */
+.equalize-cards {         /* es un .grid (display:flex) */
+  align-items: stretch;   /* que las columnas estiren a la misma altura */
+}
+
+.eq-col {                 /* cada columna */
+  display: flex;          /* permite que la card llene la altura */
+}
+
+.fill-card {              /* clase aplicada al <p-card> */
+  width: 100%;
+}
+
+.fill-card ::ng-deep .p-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;               /* que la tarjeta crezca a la altura disponible */
+}
+
+.fill-card ::ng-deep .p-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;               /* que el contenido también llene */
+}
+/* Pie de tabla (totales) */
+:host ::ng-deep .seg-table .p-datatable-tfoot > tr > td,
+:host ::ng-deep .seg-table .totals-row > td {
+  font-weight: 700;
+  background: var(--surface-ground);
+  border-top: 2px solid var(--surface-border);
+}
+:host ::ng-deep .seg-table table {
+  table-layout: fixed;
+}

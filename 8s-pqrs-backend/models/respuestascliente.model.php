@@ -401,4 +401,94 @@ class RespuestasCliente
         $stmt->close(); $con->close();
         return $row ? (int)$row['idRespCliente'] : null;
     }
+
+    public function insertarLote($idProgEncuesta, array $respuestas, $atomic = true): array
+    {
+        try {
+            $conObj = new ClaseConectar();
+            $con = $conObj->ProcedimientoParaConectar();
+            $con->set_charset('utf8mb4');
+
+            // Iniciar transacción
+            $con->begin_transaction();
+
+            // NOTA de tipos (ajusta a tu esquema real):
+            // idProgEncuesta (int), idPregunta (int), idOpcion (int|null), valorNumerico (int|null),
+            // valorTexto (string|null), comentario (string|null), generaPqr (int|null), idCategoria (int|null), estado (int)
+            $sql = "INSERT INTO respuestascliente
+                    (idProgEncuesta, idPregunta, idOpcion, valorNumerico, valorTexto, comentario, generaPqr, idcategoria, estado)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $con->prepare($sql);
+            if (!$stmt) {
+                $con->rollback();
+                return ["success"=>false, "message"=>"Error al preparar statement: ".$con->error];
+            }
+
+            $insertados = 0;
+            $errores = [];
+
+            foreach ($respuestas as $i => $r) {
+                $idPregunta   = isset($r['idPregunta']) ? (int)$r['idPregunta'] : null;
+                if (!$idPregunta) {
+                    $errores[] = ["index"=>$i, "error"=>"idPregunta requerido"];
+                    if ($atomic) { $stmt->close(); $con->rollback(); $con->close(); return ["success"=>false, "message"=>"Falta idPregunta en una respuesta", "errores"=>$errores]; }
+                    continue;
+                }
+
+                $idOpcion     = isset($r['idOpcion']) ? (int)$r['idOpcion'] : null;
+                $valorNumerico= isset($r['valorNumerico']) ? (int)$r['valorNumerico'] : (isset($r['valor']) ? (int)$r['valor'] : null);
+                $valorTexto   = isset($r['valorTexto']) ? (string)$r['valorTexto'] : null;
+                $comentario   = isset($r['comentario']) ? (string)$r['comentario'] : null;
+                $generaPqr    = isset($r['generaPqr']) ? (int)$r['generaPqr'] : null;
+                $idCategoria  = isset($r['idCategoria']) ? (int)$r['idCategoria'] : (isset($r['categoriaId']) ? (int)$r['categoriaId'] : null);
+                $estado       = isset($r['estado']) ? (int)$r['estado'] : 1;
+
+                // bind types: i i i i s s i i i
+                if (!$stmt->bind_param(
+                    'iiiissiii',
+                    $idProgEncuesta,
+                    $idPregunta,
+                    $idOpcion,
+                    $valorNumerico,
+                    $valorTexto,
+                    $comentario,
+                    $generaPqr,
+                    $idCategoria,
+                    $estado
+                )) {
+                    $errores[] = ["index"=>$i, "error"=>"bind_param: ".$stmt->error];
+                    if ($atomic) { $stmt->close(); $con->rollback(); $con->close(); return ["success"=>false, "message"=>"Error bind_param", "errores"=>$errores]; }
+                    continue;
+                }
+
+                if (!$stmt->execute()) {
+                    $errores[] = ["index"=>$i, "error"=>$stmt->error];
+                    if ($atomic) { $stmt->close(); $con->rollback(); $con->close(); return ["success"=>false, "message"=>"Error al insertar: ".$stmt->error, "errores"=>$errores]; }
+                    continue;
+                }
+
+                $insertados++;
+            }
+
+            $stmt->close();
+
+            // Si no es atómico, confirmamos aunque haya errores parciales
+            $con->commit();
+            $con->close();
+
+            if ($insertados > 0 && count($errores) === 0) {
+                return ["success"=>true, "insertados"=>$insertados, "message"=>"Se guardaron {$insertados} respuesta(s)."];
+            } elseif ($insertados > 0) {
+                return ["success"=>true, "insertados"=>$insertados, "message"=>"Se guardaron {$insertados} respuesta(s) con ".count($errores)." error(es) parcial(es).", "errores"=>$errores];
+            } else {
+                return ["success"=>false, "insertados"=>0, "message"=>"No se insertó ninguna respuesta.", "errores"=>$errores];
+            }
+
+        } catch (Exception $e) {
+            if (isset($con) && $con->errno === 0) { $con->rollback(); $con->close(); }
+            http_response_code(500);
+            return ["success"=>false, "message"=>$e->getMessage()];
+        }
+    }
+
 }

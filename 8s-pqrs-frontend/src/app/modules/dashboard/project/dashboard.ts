@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TooltipModule } from 'primeng/tooltip'; 
+import { TooltipModule } from 'primeng/tooltip';
 
 /* PrimeNG */
 import { ToolbarModule } from 'primeng/toolbar';
@@ -16,13 +16,16 @@ import { PanelModule } from 'primeng/panel';
 import { DividerModule } from 'primeng/divider';
 import { TabsModule } from 'primeng/tabs';
 
+import { ElementRef, ViewChild, HostListener, AfterViewInit } from '@angular/core';
+
 /* Chart.js (auto) */
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';   // <—
 Chart.register(ChartDataLabels);
 
 /* Servicio */
-import { DashboardService } from '@/modules/Services/dashboard-service';
+import { DashboardService, EncuestaMatrizRow } from '@/modules/Services/dashboard-service';
+// import { EncuestaMatrizRow } from '@/modules/Services/dashboard-service';
 
 type Periodo = 'D' | 'W' | 'M' | 'Q';
 
@@ -84,6 +87,13 @@ export class Dashboard implements OnInit {
   encuestasResumen: EncuestasResumen | null = null;
   pqrsResumen: PqrsResumen | null = null;
 
+  encuestasPorCanal: Array<{ segmento: string; programadas: number; enviadas: number; respondidas: number; tasa_pct: number }> = [];
+  encuestasPorAgencia: Array<{ segmento: string; programadas: number; enviadas: number; respondidas: number; tasa_pct: number }> = [];
+  // Totales para cada tabla
+  totalCanal = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
+  totalAgencia = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
+
+
   // Tendencia (línea + barras)
   lineData: any = null;
   lineOptions: any = null;
@@ -118,6 +128,11 @@ export class Dashboard implements OnInit {
   seriesCorr: any = null; // mixto CSAT vs PQRs
   seriesLineOpts: any = null;
   seriesMixOpts: any = null;
+
+  ngAfterViewInit() {
+    setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
+  }
+
 
   constructor(private dashboardService: DashboardService) { }
 
@@ -161,8 +176,7 @@ export class Dashboard implements OnInit {
 
     // KPIs adicionales
     if (range) {
-      // this.dashboardService.getEncuestasTasa({ range })
-      //   .subscribe(t => this.encuestasTasa = t);
+
       this.dashboardService.getEncuestasResumen({ range })
         .subscribe(r => this.encuestasResumen = r);
 
@@ -170,13 +184,87 @@ export class Dashboard implements OnInit {
       this.dashboardService.getPqrsResumen({ range })
         .subscribe(r => this.pqrsResumen = r);
 
+
+
+      // // ⬇️ AQUI: cargar filas nuevas por CANAL y por AGENCIA
+      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
+      //   .subscribe(d => this.encuestasPorCanal = d ?? []);
+
+      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
+      //   .subscribe(d => this.encuestasPorAgencia = d ?? []);
+
+
+
+
+      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
+      //   .subscribe(d => {
+      //     this.encuestasPorCanal = d ?? [];
+      //     setTimeout(() => this.syncRowHeights(), 0);
+      //   });
+
+      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
+      //   .subscribe(d => {
+      //     this.encuestasPorAgencia = d ?? [];
+      //     setTimeout(() => this.syncRowHeights(), 0);
+      //   });
+
+
+      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
+      //   .subscribe(d => {
+      //     this.encuestasPorCanal = d ?? [];
+      //     // esperar al render del tbody
+      //     setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
+      //   });
+
+      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
+      //   .subscribe(d => {
+      //     this.encuestasPorAgencia = d ?? [];
+      //     setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
+      //   });
+
+
+      // this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
+      //   .subscribe(d => {
+      //     this.encuestasPorCanal = d ?? [];
+      //     this.totalCanal = this.computeTotals(this.encuestasPorCanal);
+      //     setTimeout(() => this.syncRowHeights(), 0);
+      //   });
+
+      // this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
+      //   .subscribe(d => {
+      //     this.encuestasPorAgencia = d ?? [];
+      //     this.totalAgencia = this.computeTotals(this.encuestasPorAgencia);
+      //     setTimeout(() => this.syncRowHeights(), 0);
+      //   });
+
+      this.dashboardService.getEncuestasSegmentOverview('canal', inicio!, fin!)
+  .subscribe(d => {
+    this.encuestasPorCanal = d ?? [];
+    this.totalCanal = this.computeTotals(this.encuestasPorCanal);
+    setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
+  });
+
+this.dashboardService.getEncuestasSegmentOverview('agencia', inicio!, fin!)
+  .subscribe(d => {
+    this.encuestasPorAgencia = d ?? [];
+    this.totalAgencia = this.computeTotals(this.encuestasPorAgencia);
+    setTimeout(() => { this.syncRowHeights(); this.attachRowResizeObservers(); }, 0);
+  });
+
+
+this.dashboardService.getEncuestasMatriz({ range })
+  .subscribe((rows: EncuestaMatrizRow[]) => {
+    this.encuestasMatriz = Array.isArray(rows) ? rows : [];
+    this.encuestasMatrizTotals = this.computeTotalsSimple(this.encuestasMatriz);
+  });
+
       if (this.selectedTabIndex === 3) {
         this.loadSeries();
       }
     }
   }
 
-pqrsEstadoOpts: any = null; // propiedad nueva
+  pqrsEstadoOpts: any = null; // propiedad nueva
 
   private applyResponse(res: any) {
     this.kpis = res.kpis;
@@ -229,42 +317,30 @@ pqrsEstadoOpts: any = null; // propiedad nueva
     };
   }
 
-  // private makeLineOptions() {
-  //   return {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     interaction: { mode: 'index', intersect: false },
-  //     plugins: { legend: { position: 'top' } },
-  //     scales: {
-  //       ySat: { type: 'linear', position: 'left', min: 0, max: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
-  //       yPqrs: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'PQRs' } },
-  //       x: { ticks: { autoSkip: true, maxRotation: 0 } }
-  //     }
-  //   };
-  // }
-private makeLineOptions() {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { position: 'top' },
-      datalabels: {
-        // Mostrar valores en línea y barras con formato distinto
-        align: (ctx:any) => ctx.dataset.type === 'line' ? 'top' : 'end',
-        anchor: (ctx:any) => ctx.dataset.type === 'line' ? 'end' : 'end',
-        offset: (ctx:any) => ctx.dataset.type === 'line' ? 4 : 2,
-        formatter: (v:number, ctx:any) =>
-          ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
+
+  private makeLineOptions() {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top' },
+        datalabels: {
+          // Mostrar valores en línea y barras con formato distinto
+          align: (ctx: any) => ctx.dataset.type === 'line' ? 'top' : 'end',
+          anchor: (ctx: any) => ctx.dataset.type === 'line' ? 'end' : 'end',
+          offset: (ctx: any) => ctx.dataset.type === 'line' ? 4 : 2,
+          formatter: (v: number, ctx: any) =>
+            ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
+        }
+      },
+      scales: {
+        ySat: { type: 'linear', position: 'left', min: 0, max: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
+        yPqrs: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'PQRs' } },
+        x: { ticks: { autoSkip: true, maxRotation: 0 } }
       }
-    },
-    scales: {
-      ySat: { type: 'linear', position: 'left', min: 0, max: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
-      yPqrs:{ type: 'linear', position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true, title: { display: true, text: 'PQRs' } },
-      x: { ticks: { autoSkip: true, maxRotation: 0 } }
-    }
-  };
-}
+    };
+  }
 
   private mapDonutData(src: any): any {
     if (!src) return null;
@@ -299,31 +375,22 @@ private makeLineOptions() {
     return { labels, datasets: [{ data, borderWidth: 1 }] };
   }
 
-  // private makeDonutOptions() {
-  //   return {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     cutout: '62%',
-  //     plugins: {
-  //       legend: { position: 'top' }
-  //     }
-  //   };
-  // }
-private makeDonutOptions() {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '62%',
-    plugins: {
-      legend: { position: 'top' },
-      datalabels: {
-        color: '#111',
-        font: { weight: '600' },
-        formatter: (value: number, ctx: any) => this.donutPctFormatter(value, ctx),
+
+  private makeDonutOptions() {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'top' },
+        datalabels: {
+          color: '#111',
+          font: { weight: '600' },
+          formatter: (value: number, ctx: any) => this.donutPctFormatter(value, ctx),
+        }
       }
-    }
-  };
-}
+    };
+  }
 
 
   private mapSegBar(src: any[], labelKey: string, valueKey: string) {
@@ -333,94 +400,45 @@ private makeDonutOptions() {
     return { labels, datasets: [{ label: '', data, borderWidth: 1 }] };
   }
 
-  // private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
-  //   const maxByMode = mode === '%' ? 100 : (mode === 'nps' ? 100 : 5);
-  //   const minByMode = mode === 'nps' ? -100 : 0;
-  //   return {
-  //     indexAxis: 'y' as const,
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     scales: {
-  //       x: {
-  //         min: minByMode, max: maxByMode,
-  //         grid: { color: 'rgba(0,0,0,.05)' },
-  //         ticks: { callback: (v: number) => mode === '%' ? `${v}%` : `${v}` }
-  //       },
-  //       y: { ticks: { autoSkip: false } }
-  //     },
-  //     plugins: { legend: { display: false } }
-  //   };
-  // }
 
-//   private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
-//   const maxByMode = mode === '%' ? 100 : (mode === 'nps' ? 100 : 5);
-//   const minByMode = mode === 'nps' ? -100 : 0;
-//   const suffix = mode === '%' ? '%' : '';
-//   const decimals = mode === '1-5' ? 1 : 0;
+  private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
+    const isPct = mode === '%' || mode === 'nps';
+    const maxByMode = mode === '1-5' ? 5 : 100;
+    const minByMode = mode === 'nps' ? -100 : 0;
 
-//   return {
-//     indexAxis: 'y' as const,
-//     responsive: true,
-//     maintainAspectRatio: false,
-//     scales: {
-//       x: {
-//         min: minByMode, max: maxByMode,
-//         grid: { color: 'rgba(0,0,0,.05)' },
-//         ticks: { callback: (v: number) => mode === '%' ? `${v}%` : `${v}` }
-//       },
-//       y: { ticks: { autoSkip: false } }
-//     },
-//     plugins: {
-//       legend: { display: false },
-//       datalabels: {
-//         anchor: 'end',
-//         align: 'end',
-//         offset: 2,
-//         clamp: true,
-//         formatter: (v: number) => `${this.fmtNum(v, decimals)}${suffix}`,
-//       }
-//     }
-//   };
-// }
-
-private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
-  const isPct = mode === '%' || mode === 'nps';
-  const maxByMode = mode === '1-5' ? 5 : 100;
-  const minByMode = mode === 'nps' ? -100 : 0;
-
-  return {
-    indexAxis: 'y' as const,
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        min: minByMode,
-        max: maxByMode,
-        grid: { color: 'rgba(0,0,0,.05)' },
-        ticks: {
-          // ← eje X en % cuando sea NPS o %
-          callback: (v: number) => isPct ? `${v}%` : `${v}`
-        }
+    return {
+      indexAxis: 'y' as const,
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          min: minByMode,
+          max: maxByMode,
+          grid: { color: 'rgba(0,0,0,.05)' },
+          ticks: {
+            // ← eje X en % cuando sea NPS o %
+            callback: (v: number) => isPct ? `${v}%` : `${v}`
+          }
+        },
+        y: { ticks: { autoSkip: false } }
       },
-      y: { ticks: { autoSkip: false } }
-    },
-    plugins: {
-      legend: { display: false },
-      // ← etiquetas visibles y “metidas” en el final de la barra
-      datalabels: {
-        anchor: 'end',
-        align: 'end',
-        offset: -50,        // mueve la etiqueta un poco hacia dentro
-        clamp: true,       // evita que se dibuje fuera del chart area
-        formatter: (val: number) => {
-          if (isPct) return `${val}%`;
-          // para escala 1–5 mostramos 1 decimal si aplica
-          return Number.isFinite(val) ? (Math.round(val * 10) / 10).toString() : `${val}`;
+      plugins: {
+        legend: { display: false },
+        // ← etiquetas visibles y “metidas” en el final de la barra
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          offset: -50,        // mueve la etiqueta un poco hacia dentro
+          clamp: true,       // evita que se dibuje fuera del chart area
+          formatter: (val: number) => {
+            if (isPct) return `${val}%`;
+            // para escala 1–5 mostramos 1 decimal si aplica
+            return Number.isFinite(val) ? (Math.round(val * 10) / 10).toString() : `${val}`;
+          }
         }
       }
-    }
-  };
-}
+    };
+  }
 
 
   private mapPqrsEstado(src: any[]) {
@@ -430,99 +448,56 @@ private makeSegBarOptions(mode: '%' | 'nps' | '1-5' = '%') {
     return { labels, datasets: [{ label: 'PQRs', data, borderWidth: 1 }] };
   }
 
-  /* ====== Series (EVOLUCIÓN) ====== */
-  // private buildSeriesLineOpts() {
-  //   this.seriesLineOpts = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     scales: {
-  //       x: { grid: { display: false } },
-  //       y: { beginAtZero: true, grid: { color: '#eee' } }
-  //     },
-  //     plugins: {
-  //       legend: { display: true, position: 'top' },
-  //       tooltip: { enabled: true }
-  //     }
-  //   };
-  // }
-
-  // private buildSeriesMixOpts() {
-  //   this.seriesMixOpts = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     scales: {
-  //       x: { grid: { display: false } },
-  //       y: {
-  //         type: 'linear',
-  //         position: 'left',
-  //         suggestedMin: 0,
-  //         suggestedMax: 5,
-  //         title: { display: true, text: 'Satisfacción (1–5)' }
-  //       },
-  //       y1: {
-  //         type: 'linear',
-  //         position: 'right',
-  //         beginAtZero: true,
-  //         grid: { drawOnChartArea: false },
-  //         title: { display: true, text: 'PQRs' }
-  //       }
-  //     },
-  //     plugins: {
-  //       legend: { position: 'top' },
-  //       tooltip: { enabled: true }
-  //     }
-  //   };
-  // }
-private buildSeriesLineOpts() {
-  this.seriesLineOpts = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { grid: { display: false } },
-      y: { beginAtZero: true, grid: { color: '#eee' } }
-    },
-    plugins: {
-      legend: { display: true, position: 'top' },
-      tooltip: { enabled: true },
-      datalabels: {
-        align: 'top',
-        anchor: 'end',
-        offset: 4,
-        formatter: (v:number, ctx:any) => {
-          // Etiquetas “bonitas” según serie:
-          const label = (ctx?.dataset?.label || '').toLowerCase();
-          if (label.includes('csat')) return `${this.fmtNum(v, 0)}%`;
-          if (label.includes('nps'))  return this.fmtNum(v, 0);
-          if (label.includes('ces'))  return this.fmtNum(v, 1);
-          return this.fmtNum(v, 0);
-        },
+  private buildSeriesLineOpts() {
+    this.seriesLineOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#eee' } }
+      },
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: { enabled: true },
+        datalabels: {
+          align: 'top',
+          anchor: 'end',
+          offset: 4,
+          formatter: (v: number, ctx: any) => {
+            // Etiquetas “bonitas” según serie:
+            const label = (ctx?.dataset?.label || '').toLowerCase();
+            if (label.includes('csat')) return `${this.fmtNum(v, 0)}%`;
+            if (label.includes('nps')) return this.fmtNum(v, 0);
+            if (label.includes('ces')) return this.fmtNum(v, 1);
+            return this.fmtNum(v, 0);
+          },
+        }
       }
-    }
-  };
-}
+    };
+  }
 
-private buildSeriesMixOpts() {
-  this.seriesMixOpts = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { grid: { display: false } },
-      y:  { type: 'linear', position: 'left',  suggestedMin: 0, suggestedMax: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
-      y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'PQRs' } }
-    },
-    plugins: {
-      legend: { position: 'top' },
-      tooltip: { enabled: true },
-      datalabels: {
-        align: (ctx:any) => ctx.dataset.type === 'line' ? 'top' : 'end',
-        anchor: 'end',
-        offset: (ctx:any) => ctx.dataset.type === 'line' ? 4 : 2,
-        formatter: (v:number, ctx:any) =>
-          ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
+  private buildSeriesMixOpts() {
+    this.seriesMixOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false } },
+        y: { type: 'linear', position: 'left', suggestedMin: 0, suggestedMax: 5, title: { display: true, text: 'Satisfacción (1–5)' } },
+        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'PQRs' } }
+      },
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: { enabled: true },
+        datalabels: {
+          align: (ctx: any) => ctx.dataset.type === 'line' ? 'top' : 'end',
+          anchor: 'end',
+          offset: (ctx: any) => ctx.dataset.type === 'line' ? 4 : 2,
+          formatter: (v: number, ctx: any) =>
+            ctx.dataset.type === 'line' ? this.fmtNum(v, 1) : this.fmtNum(v, 0),
+        }
       }
-    }
-  };
-}
+    };
+  }
 
   private toLineDataset(rows: Array<{ periodo: string; valor: number }>, label: string) {
     const labels = rows.map(r => r.periodo);
@@ -583,34 +558,192 @@ private buildSeriesMixOpts() {
   }
 
 
-// ===== Helpers de datalabels =====
-private fmtNum = (v: any, dec = 0) =>
-  (typeof v === 'number' && isFinite(v)) ? v.toFixed(dec) : '';
+  // ===== Helpers de datalabels =====
+  private fmtNum = (v: any, dec = 0) =>
+    (typeof v === 'number' && isFinite(v)) ? v.toFixed(dec) : '';
 
-/** Para DONUT: porcentaje de cada porción */
-private donutPctFormatter = (value: number, ctx: any) => {
-  const ds = ctx.chart.data.datasets[0];
-  const total = (ds?.data as number[]).reduce((a, b) => a + (+b || 0), 0) || 1;
-  const pct = (value * 100) / total;
-  return `${pct.toFixed(0)}%`;
-};
-
-/** Datalabels base para barras horizontales/verticales */
-private makeBarNumberOptions(suffix = '', decimals = 0) {
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      datalabels: {
-        anchor: 'end',
-        align: 'end',
-        offset: 2,
-        clamp: true,
-        formatter: (v: number) => `${this.fmtNum(v, decimals)}${suffix}`,
-      }
-    }
+  /** Para DONUT: porcentaje de cada porción */
+  private donutPctFormatter = (value: number, ctx: any) => {
+    const ds = ctx.chart.data.datasets[0];
+    const total = (ds?.data as number[]).reduce((a, b) => a + (+b || 0), 0) || 1;
+    const pct = (value * 100) / total;
+    return `${pct.toFixed(0)}%`;
   };
+
+  /** Datalabels base para barras horizontales/verticales */
+  private makeBarNumberOptions(suffix = '', decimals = 0) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          offset: 2,
+          clamp: true,
+          formatter: (v: number) => `${this.fmtNum(v, decimals)}${suffix}`,
+        }
+      }
+    };
+  }
+
+  getPctClass(p: number | null | undefined): string {
+    const v = Number(p ?? 0);
+    if (v >= 90) return 'pct-green';
+    if (v >= 70) return 'pct-teal';
+    if (v >= 50) return 'pct-orange';
+    return 'pct-red';
+  }
+
+  pctBadgeClass(p: number | null | undefined): string {
+    const v = Number(p ?? 0);
+    if (v >= 90) return 'pct-badge pct-green';
+    if (v >= 70) return 'pct-badge pct-teal';
+    if (v >= 50) return 'pct-badge pct-orange';
+    return 'pct-badge pct-red';
+  }
+
+  fmtPct(v: number | null | undefined): string {
+    const n = Number(v ?? 0);
+    return `${isFinite(n) ? n.toFixed(0) : '0'}%`;
+  }
+
+
+  @ViewChild('tblCanal', { read: ElementRef }) tblCanal!: ElementRef;
+  @ViewChild('tblAgencia', { read: ElementRef }) tblAgencia!: ElementRef;
+  private rowsSynced = false;
+
+  @HostListener('window:resize')
+  onWinResize() { this.syncRowHeights(); }
+
+  // private syncRowHeights() {
+  //   // asegúrate de que existen ambas tablas ya renderizadas
+  //   if (!this.tblCanal?.nativeElement || !this.tblAgencia?.nativeElement) return;
+
+  //   const leftRows = this.tblCanal.nativeElement.querySelectorAll('tbody tr');
+  //   const rightRows = this.tblAgencia.nativeElement.querySelectorAll('tbody tr');
+
+  //   if (!leftRows.length && !rightRows.length) return;
+
+  //   // limpia alturas previas para recalcular
+  //   leftRows.forEach((r: HTMLElement) => r.style.height = '');
+  //   rightRows.forEach((r: HTMLElement) => r.style.height = '');
+
+  //   const maxLen = Math.max(leftRows.length, rightRows.length);
+  //   for (let i = 0; i < maxLen; i++) {
+  //     const l = leftRows[i] as HTMLElement | undefined;
+  //     const r = rightRows[i] as HTMLElement | undefined;
+  //     const lh = l ? l.getBoundingClientRect().height : 0;
+  //     const rh = r ? r.getBoundingClientRect().height : 0;
+  //     const mh = Math.max(lh, rh);
+  //     if (l) l.style.height = mh + 'px';
+  //     if (r) r.style.height = mh + 'px';
+  //   }
+  // }
+  // private rafId: number | null = null;
+  // private canalObs?: MutationObserver;
+  // private agObs?: MutationObserver;
+  private rafId: number | null = null;
+  private rowObservers: ResizeObserver[] = [];   // ← observadores por fila
+
+  private getBodyRows(root: HTMLElement) {
+    const tb = root.querySelector('tbody');
+    return tb ? Array.from(tb.querySelectorAll('tr')) as HTMLElement[] : [];
+  }
+
+  private clearRowHeights(rows: HTMLElement[]) {
+    rows.forEach(r => {
+      r.style.height = '';
+      (Array.from(r.children) as HTMLElement[]).forEach(td => td.style.height = '');
+    });
+  }
+
+  private setRowHeight(row: HTMLElement | undefined, h: number) {
+    if (!row) return;
+    row.style.height = h + 'px';
+    (Array.from(row.children) as HTMLElement[]).forEach(td => td.style.height = h + 'px');
+  }
+
+  private syncRowHeights() {
+    if (!this.tblCanal?.nativeElement || !this.tblAgencia?.nativeElement) return;
+
+    const L = this.getBodyRows(this.tblCanal.nativeElement);
+    const R = this.getBodyRows(this.tblAgencia.nativeElement);
+    if (!L.length && !R.length) return;
+
+    // limpiar para medir reales
+    this.clearRowHeights(L);
+    this.clearRowHeights(R);
+
+    const maxLen = Math.max(L.length, R.length);
+    for (let i = 0; i < maxLen; i++) {
+      const l = L[i], r = R[i];
+      const lh = l ? l.getBoundingClientRect().height : 0;
+      const rh = r ? r.getBoundingClientRect().height : 0;
+      const mh = Math.max(lh, rh);
+      this.setRowHeight(l, mh);
+      this.setRowHeight(r, mh);
+    }
+  }
+
+  /** Crea ResizeObservers por fila para re-igualar cuando cambie el alto */
+  private attachRowResizeObservers() {
+    // limpia observers anteriores
+    this.rowObservers.forEach(o => o.disconnect());
+    this.rowObservers = [];
+
+    if (!this.tblCanal?.nativeElement || !this.tblAgencia?.nativeElement) return;
+
+    const L = this.getBodyRows(this.tblCanal.nativeElement);
+    const R = this.getBodyRows(this.tblAgencia.nativeElement);
+    const maxLen = Math.max(L.length, R.length);
+
+    const schedule = () => {
+      if (this.rafId) cancelAnimationFrame(this.rafId);
+      this.rafId = requestAnimationFrame(() => this.syncRowHeights());
+    };
+
+    for (let i = 0; i < maxLen; i++) {
+      const l = L[i], r = R[i];
+      const ro = new ResizeObserver(() => schedule());
+      if (l) ro.observe(l);
+      if (r) ro.observe(r);
+      this.rowObservers.push(ro);
+    }
+
+    // primera igualación al enganchar
+    schedule();
+  }
+
+  // Calcula totales y tasa global (respondidas/enviadas)
+  private computeTotals(list: Array<{ programadas: number; enviadas: number; respondidas: number }>) {
+    const programadas = list.reduce((a, b) => a + (Number(b?.programadas) || 0), 0);
+    const enviadas = list.reduce((a, b) => a + (Number(b?.enviadas) || 0), 0);
+    const respondidas = list.reduce((a, b) => a + (Number(b?.respondidas) || 0), 0);
+    const tasa_pct = enviadas > 0 ? Math.round((respondidas * 10000) / enviadas) / 100 : 0; // 2 dec.
+    return { programadas, enviadas, respondidas, tasa_pct };
+  }
+
+
+  // // propiedad para el dataset del nuevo dashboard
+  // encuestasMatriz: Array<{
+  //   idEncuesta: number; encuesta: string; canal: string; agencia: string; estadoEnvio: string;
+  //   programadas: number; enviadas: number; respondidas: number; tasa_pct: number;
+  // }> = [];
+
+  // // totales de la tabla (opcional)
+  // encuestasMatrizTotals = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
+
+ encuestasMatriz: EncuestaMatrizRow[] = [];
+encuestasMatrizTotals = { programadas: 0, enviadas: 0, respondidas: 0, tasa_pct: 0 };
+
+private computeTotalsSimple(list: EncuestaMatrizRow[]) {
+  const programadas = list.reduce((a, b) => a + (+b.programadas || 0), 0);
+  const enviadas    = list.reduce((a, b) => a + (+b.enviadas    || 0), 0);
+  const respondidas = list.reduce((a, b) => a + (+b.respondidas || 0), 0);
+  const tasa_pct    = enviadas > 0 ? Math.round((respondidas * 10000) / enviadas) / 100 : 0;
+  return { programadas, enviadas, respondidas, tasa_pct };
 }
 
 
