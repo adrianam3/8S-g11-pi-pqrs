@@ -922,5 +922,103 @@ export class Dashboard implements OnInit, AfterViewInit {
 
   }
 
+// nps detalle
+
+/** Color azul igual al del velocímetro */
+get npsBrandColor(): string {
+  return '#1e88e5';
+}
+
+/* =========== Colores dinámicos para barras (gradientes) =========== */
+// private clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
+// private hexToRgb(hex: string) {
+//   const m = hex.replace('#', '');
+//   const v = m.length === 3
+//     ? m.split('').map(c => parseInt(c + c, 16))
+//     : [parseInt(m.slice(0,2),16), parseInt(m.slice(2,4),16), parseInt(m.slice(4,6),16)];
+//   return { r: v[0], g: v[1], b: v[2] };
+// }
+// private rgbToHex(r: number, g: number, b: number) {
+//   const to = (n: number) => n.toString(16).padStart(2, '0');
+//   return `#${to(r)}${to(g)}${to(b)}`;
+// }
+// private mix(a: string, b: string, t: number) {
+//   const A = this.hexToRgb(a), B = this.hexToRgb(b);
+//   const k = this.clamp01(t);
+//   const r = Math.round(A.r + (B.r - A.r) * k);
+//   const g = Math.round(A.g + (B.g - A.g) * k);
+//   const bch = Math.round(A.b + (B.b - A.b) * k);
+//   return this.rgbToHex(r, g, bch);
+// }
+
+// /** Verde (claro→oscuro) según % promotores */
+// promColor(p: number): string {
+//   // 0% => verde claro (#86efac), 100% => verde fuerte (#16a34a)
+//   return this.mix('#86efac', '#16a34a', (p || 0) / 100);
+// }
+
+// /** Pasivos: verde claro → amarillo según % (más % = más amarillo) */
+// pasivoColor(p: number): string {
+//   // 0% => verde claro, 100% => amarillo
+//   return this.mix('#86efac', '#facc15', (p || 0) / 100);
+// }
+
+// /** Detractores: naranja → rojo según % (más % = más rojo) */
+// detrColor(p: number): string {
+//   // 0% => naranja, 100% => rojo
+//   return this.mix('#f97316', '#ef4444', (p || 0) / 100);
+// }
+
+/* ========= Utils de color (una sola vez en la clase) ========= */
+private clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
+
+private hexToRgb(hex: string) {
+  const m = hex.replace('#', '');
+  const v = m.length === 3
+    ? m.split('').map(c => parseInt(c + c, 16))
+    : [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
+  return { r: v[0], g: v[1], b: v[2] };
+}
+
+private rgbToHex(r: number, g: number, bVal: number) {
+  const to = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${to(r)}${to(g)}${to(bVal)}`;
+}
+
+/** Mezcla dos colores hex en proporción t (0..1) */
+private mixHex(hexA: string, hexB: string, t: number) {
+  const A = this.hexToRgb(hexA);
+  const B = this.hexToRgb(hexB);
+  const k = this.clamp01(t);
+  const r = Math.round(A.r + (B.r - A.r) * k);
+  const g = Math.round(A.g + (B.g - A.g) * k);
+  const bVal = Math.round(A.b + (B.b - A.b) * k);
+  return this.rgbToHex(r, g, bVal);
+}
+
+/* ========= Gradientes por grupo ========= */
+// Promotores: 0% => verde claro, 100% => verde fuerte
+promColor(p: number): string {
+  return this.mixHex('#86efac', '#16a34a', this.clamp01((p || 0) / 100));
+}
+// Pasivos: 0% => verde claro, 100% => amarillo
+pasivoColor(p: number): string {
+  return this.mixHex('#86efac', '#facc15', this.clamp01((p || 0) / 100));
+}
+// Detractores: 0% => naranja, 100% => rojo
+detrColor(p: number): string {
+  return this.mixHex('#f97316', '#ef4444', this.clamp01((p || 0) / 100));
+}
+
+/* Aplica el color al ProgressBar */
+barStyle(color: string) {
+  return {
+    '--bar-color': color,
+    '--p-progressbar-value-background': color,
+    '--p-progressbar-value-border-color': color
+  } as any;
+}
+
+
 
 }

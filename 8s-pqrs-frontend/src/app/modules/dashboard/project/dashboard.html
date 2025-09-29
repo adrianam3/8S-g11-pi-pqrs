@@ -513,75 +513,62 @@
       </p-tabpanel>
 
 
+<!-- ========== 4: NPS (gauge) ========== -->
+<p-tabpanel [value]="4">
+  <div class="grid nps-eq-row">
+    <!-- Izquierda: Gauge -->
+    <div class="col-12 lg:col-6">
+      <p-card header="NPS (−100 a 100)" class="eq-card h-100">
+        <div class="chart-holder chart-300">
+          <p-chart type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions"></p-chart>
+        </div>
+      </p-card>
+    </div>
 
-      <!-- ========== 4: NPS (gauge) ========== -->
-      <p-tabpanel [value]="4">
-        <div class="grid">
-          <div class="col-12 lg:col-6">
-            <p-card header="NPS (−100 a 100)" class="eq-card">
-              <div class="chart-holder chart-300">
-                <!-- <p-chart type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions"></p-chart> -->
+    <!-- Derecha: Detalle -->
+    <div class="col-12 lg:col-6">
+      <p-card header="Detalle NPS" class="eq-card h-100 nps-detail-card">
+        <div class="nps-header">
+          <div class="nps-subtitle">NPS<br><small>Promotores – Detractores</small></div>
+          <div class="nps-score">{{ kpis?.nps ?? 0 }}</div>
+        </div>
 
-                <!-- <p-chart *ngIf="npsGaugeData"
-                     type="doughnut"
-                     [data]="npsGaugeData"
-                     [options]="npsGaugeOptions"></p-chart> -->
-                <!-- <p-chart *ngIf="npsGaugeData" type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions">
-                </p-chart> -->
-                <p-chart *ngIf="npsGaugeData && npsGaugeOptions" type="doughnut" [data]="npsGaugeData"
-                  [options]="npsGaugeOptions">
-                </p-chart>
-
-              </div>
-            </p-card>
+        <div class="nps-list">
+          <div class="nps-item">
+            <div class="row">
+              <span>Promotores</span>
+              <span class="pct">{{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}%</span>
+            </div>
+            <p-progressBar class="nps-bar"
+              [style]="barStyle(promColor(kpis?.nps_breakdown?.promotores_pct ?? 0))"
+              [value]="kpis?.nps_breakdown?.promotores_pct ?? 0"></p-progressBar>
           </div>
 
-          <div class="col-12 lg:col-6">
-            <p-card header="Detalle NPS" class="eq-card">
-              <ul class="kpi-list">
-                <li>
-                  <div class="kpi-left">
-                    <div class="kpi-name">NPS</div>
-                    <div class="kpi-sub">Promotores − Detractores</div>
-                  </div>
-                  <div class="kpi-right">
-                    <span class="kpi-pct">{{ kpis?.nps ?? 0 }}</span>
-                    <!-- <p-progressBar [value]="((kpis?.nps ?? 0) + 100) / 2"></p-progressBar> -->
-                    <!-- mapeo: −100..100 → 0..100 -->
-                  </div>
-                </li>
-                <li>
-                  <div class="kpi-left">
-                    <div class="kpi-name">Promotores</div>
-                  </div>
-                  <div class="kpi-right">
-                    <span class="kpi-pct">{{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}%</span>
-                    <p-progressBar [value]="kpis?.nps_breakdown?.promotores_pct ?? 0"></p-progressBar>
-                  </div>
-                </li>
-                <li>
-                  <div class="kpi-left">
-                    <div class="kpi-name">Pasivos</div>
-                  </div>
-                  <div class="kpi-right">
-                    <span class="kpi-pct">{{ kpis?.nps_breakdown?.pasivos_pct ?? 0 }}%</span>
-                    <p-progressBar [value]="kpis?.nps_breakdown?.pasivos_pct ?? 0"></p-progressBar>
-                  </div>
-                </li>
-                <li>
-                  <div class="kpi-left">
-                    <div class="kpi-name">Detractores</div>
-                  </div>
-                  <div class="kpi-right">
-                    <span class="kpi-pct">{{ kpis?.nps_breakdown?.detractores_pct ?? 0 }}%</span>
-                    <p-progressBar [value]="kpis?.nps_breakdown?.detractores_pct ?? 0"></p-progressBar>
-                  </div>
-                </li>
-              </ul>
-            </p-card>
+          <div class="nps-item">
+            <div class="row">
+              <span>Pasivos</span>
+              <span class="pct">{{ kpis?.nps_breakdown?.pasivos_pct ?? 0 }}%</span>
+            </div>
+            <p-progressBar class="nps-bar"
+              [style]="barStyle(pasivoColor(kpis?.nps_breakdown?.pasivos_pct ?? 0))"
+              [value]="kpis?.nps_breakdown?.pasivos_pct ?? 0"></p-progressBar>
+          </div>
+
+          <div class="nps-item">
+            <div class="row">
+              <span>Detractores</span>
+              <span class="pct">{{ kpis?.nps_breakdown?.detractores_pct ?? 0 }}%</span>
+            </div>
+            <p-progressBar class="nps-bar"
+              [style]="barStyle(detrColor(kpis?.nps_breakdown?.detractores_pct ?? 0))"
+              [value]="kpis?.nps_breakdown?.detractores_pct ?? 0"></p-progressBar>
           </div>
         </div>
-      </p-tabpanel>
+      </p-card>
+    </div>
+  </div>
+</p-tabpanel>
+
 
 
 

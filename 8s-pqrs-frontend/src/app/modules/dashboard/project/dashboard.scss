@@ -781,3 +781,127 @@
   padding-bottom: .25rem;
 }
 .tablist-scroll::-webkit-scrollbar { height: 6px; }
+
+
+// detalle nps
+// /* ===== Detalle NPS ===== */
+// .nps-detail-card {
+//   .nps-head {
+//     display: flex;
+//     align-items: center;
+//     justify-content: space-between;
+//     gap: .75rem;
+//     padding: .25rem .25rem 0;
+//   }
+//   .nps-head-left .title { font-weight: 600; color: #111827; }
+//   .nps-head-left .subtitle { font-size: .85rem; color: #6b7280; margin-top: .15rem; }
+//   .nps-head-right {
+//     font-weight: 800;
+//     font-size: clamp(2.25rem, 4.2vw, 3.25rem); /* NPS GRANDE y responsivo */
+//     line-height: 1;
+//   }
+
+//   .nps-row { margin-top: 1rem; }
+//   .nps-row-label {
+//     display: flex; align-items: center; justify-content: space-between;
+//     font-size: .95rem; margin-bottom: .35rem;
+//   }
+//   .nps-row-label .lbl { color: #1f2937; font-weight: 600; }
+//   .nps-row-label .pct { color: #6b7280; }
+
+//   /* Barra con color dinámico via CSS variable */
+//   .nps-bar.p-progressbar {
+//     --bar-color: #10b981; /* fallback */
+//     height: 12px; border-radius: 999px; background: #e9eef5;
+//   }
+//   .nps-bar .p-progressbar-value {
+//     background: var(--bar-color) !important;
+//     border-radius: 999px;
+//     transition: width .3s ease, background .3s ease;
+//   }
+// }
+// // .nps-detail-card {
+// //   .nps-bar.p-progressbar {
+// //     --bar-color: #10b981; /* fallback */
+// //     height: 12px; border-radius: 999px; background: #e9eef5;
+// //   }
+// //   .nps-bar .p-progressbar-value {
+// //     background: var(--bar-color) !important;
+// //     border-radius: 999px;
+// //     transition: width .3s ease, background .3s ease;
+// //   }
+// // }
+
+/* Igualar alturas entre gauge y detalle */
+.nps-eq-row > [class*="col-"] {
+  display: flex;
+}
+.nps-eq-row .eq-card {
+  height: 100%;
+  width: 100%;
+}
+
+/* Cabecera del card Detalle */
+.nps-detail-card .p-card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.nps-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  padding-bottom: .5rem;
+  margin-bottom: .5rem;
+  border-bottom: 1px solid var(--surface-border, #e5e7eb);
+}
+.nps-subtitle {
+  line-height: 1.1;
+  font-weight: 600;
+}
+.nps-subtitle small {
+  display: block;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+/* Número grande del detalle, mismo azul del velocímetro */
+.nps-score {
+  font-weight: 800;
+  font-size: clamp(28px, 4.5vw, 42px);
+  color: #1e88e5;
+}
+
+/* Lista de barras con separación */
+.nps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;              /* ← separación entre Promotores/Pasivos/Detractores */
+  margin-top: .75rem;
+}
+.nps-item .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .35rem;
+  font-weight: 600;
+}
+.nps-item .pct {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* Barra con más altura y bordes suaves */
+.nps-bar {
+  --track: #e9eef5;
+  height: 12px;
+  border-radius: 999px;
+}
+.nps-bar .p-progressbar {
+  background: var(--track);
+  border-radius: 999px !important;
+  overflow: hidden;
+}
+.nps-bar .p-progressbar-value {
+  border-radius: 999px !important;
+}
