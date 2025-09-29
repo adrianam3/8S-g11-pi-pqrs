@@ -519,6 +519,46 @@ else if ($op === 'nps_clientes') {
     exit;
   }
 
+/***********************
+ * PQRs – Totales por tipo (PETICION, QUEJA, RECLAMO, SUGERENCIA, TOTAL)
+ * ?op=pqrs_tipo_totales&fechaInicio=YYYY-MM-DD&fechaFin=YYYY-MM-DD
+ ***********************/
+else if ($op === 'pqrs_tipo_totales') {
+  // si tu esquema no tiene tipospqrs, devuelve ceros
+  if (!table_exists($con,'tipospqrs')) {
+    echo json_encode(['peticion'=>0,'queja'=>0,'reclamo'=>0,'sugerencia'=>0,'total'=>0]);
+    exit;
+  }
+
+  fechas($ini,$fin);
+
+  $sql = "
+    SELECT
+      SUM(CASE WHEN t.nombre = 'PETICION'   AND p.idPqrs IS NOT NULL THEN 1 ELSE 0 END) AS PETICION,
+      SUM(CASE WHEN t.nombre = 'QUEJA'      AND p.idPqrs IS NOT NULL THEN 1 ELSE 0 END) AS QUEJA,
+      SUM(CASE WHEN t.nombre = 'RECLAMO'    AND p.idPqrs IS NOT NULL THEN 1 ELSE 0 END) AS RECLAMO,
+      SUM(CASE WHEN t.nombre = 'SUGERENCIA' AND p.idPqrs IS NOT NULL THEN 1 ELSE 0 END) AS SUGERENCIA,
+      COUNT(p.idPqrs) AS TOTAL
+    FROM tipospqrs t
+    LEFT JOIN pqrs p ON p.idTipo = t.idTipo
+      AND DATE(p.fechaCreacion) BETWEEN ? AND ?;
+  ";
+  $row = prep($con,$sql,'ss',[$ini,$fin])->get_result()->fetch_assoc() ?? [
+    'PETICION'=>0,'QUEJA'=>0,'RECLAMO'=>0,'SUGERENCIA'=>0,'TOTAL'=>0
+  ];
+
+  echo json_encode([
+    'peticion'   => intval($row['PETICION'] ?? 0),
+    'queja'      => intval($row['QUEJA'] ?? 0),
+    'reclamo'    => intval($row['RECLAMO'] ?? 0),
+    'sugerencia' => intval($row['SUGERENCIA'] ?? 0),
+    'total'      => intval($row['TOTAL'] ?? 0),
+  ]);
+  exit;
+}
+
+
+
   // Resumen de encuestas
   else if ($op === 'encuestas_resumen') {
     fechas($ini,$fin);

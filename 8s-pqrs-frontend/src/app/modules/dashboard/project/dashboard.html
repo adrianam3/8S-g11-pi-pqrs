@@ -345,20 +345,29 @@
         <div class="grid">
 
           <!-- KPIs PQRs: 5 en la primera fila -->
+          <!-- KPIs PQRs (dos filas). El primero (Total) ocupa 2 filas -->
           <div class="col-12">
-            <div class="kpi-row kpi-5">
-              <p-card class="eq-card kpi-card kpi-mini">
-                <ng-template pTemplate="header">
-                  <div class="kpi-header" pTooltip="Total de PQRs creadas en el período" tooltipPosition="top">
-                    <i class="pi pi-inbox kpi-icon kpi-indigo"></i>
-                    <span>Total PQRs</span>
-                  </div>
-                </ng-template>
-                <div class="kpi">{{ pqrsResumen?.total ?? overview?.total_pqrs?.value ?? 0 }}</div>
-                <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
-              </p-card>
+            <div class="kpi-grid-2rows">
+              <!-- Total PQRs (ocupa 2 filas) -->
 
-              <p-card class="eq-card kpi-card kpi-mini">
+<p-card class="eq-card kpi-card kpi-center kpi-total">
+  <ng-template pTemplate="header">
+    <div class="kpi-header">
+      <i class="pi pi-inbox kpi-icon kpi-purple"></i>
+      <span>Total PQRs</span>
+    </div>
+  </ng-template>
+
+  <div class="kpi-center-box">
+    <div class="kpi">{{ pqrsResumen?.total ?? overview?.total_pqrs?.value ?? 0 }}</div>
+    <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
+  </div>
+</p-card>
+
+
+
+              <!-- Fila 1: Abiertas, En proceso, Escaladas, Cerradas -->
+              <p-card class="eq-card kpi-card">
                 <ng-template pTemplate="header">
                   <div class="kpi-header" pTooltip="PQRs no resueltas (no cerradas)" tooltipPosition="top">
                     <i class="pi pi-info-circle kpi-icon kpi-blue"></i>
@@ -369,7 +378,7 @@
                 <div class="muted">Δ {{ overview?.pqrs_abiertas?.delta_pct_vs_prev ?? 0 }}%</div>
               </p-card>
 
-              <p-card class="eq-card kpi-card kpi-mini">
+              <p-card class="eq-card kpi-card">
                 <ng-template pTemplate="header">
                   <div class="kpi-header" pTooltip="PQRs en trámite" tooltipPosition="top">
                     <i class="pi pi-refresh kpi-icon kpi-teal"></i>
@@ -379,7 +388,7 @@
                 <div class="kpi">{{ pqrsResumen?.en_proceso ?? 0 }}</div>
               </p-card>
 
-              <p-card class="eq-card kpi-card kpi-mini">
+              <p-card class="eq-card kpi-card">
                 <ng-template pTemplate="header">
                   <div class="kpi-header" pTooltip="PQRs escaladas" tooltipPosition="top">
                     <i class="pi pi-arrow-up-right kpi-icon kpi-purple"></i>
@@ -389,7 +398,7 @@
                 <div class="kpi">{{ pqrsResumen?.escalados ?? 0 }}</div>
               </p-card>
 
-              <p-card class="eq-card kpi-card kpi-mini">
+              <p-card class="eq-card kpi-card">
                 <ng-template pTemplate="header">
                   <div class="kpi-header" pTooltip="PQRs cerradas o resueltas" tooltipPosition="top">
                     <i class="pi pi-check-circle kpi-icon kpi-green"></i>
@@ -398,8 +407,52 @@
                 </ng-template>
                 <div class="kpi">{{ pqrsResumen?.cerrados ?? 0 }}</div>
               </p-card>
+
+              <!-- Fila 2: Totales por tipo (PETICIÓN, QUEJA, RECLAMO, SUGERENCIA) -->
+              <p-card class="eq-card kpi-card">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="Total de PQRs tipo PETICIÓN" tooltipPosition="top">
+                    <i class="pi pi-file-edit kpi-icon kpi-cyan"></i>
+                    <span>Peticiones</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsTipoTot?.peticion ?? 0 }}</div>
+              </p-card>
+
+              <p-card class="eq-card kpi-card">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="Total de PQRs tipo QUEJA" tooltipPosition="top">
+                    <i class="pi pi-megaphone kpi-icon kpi-orange"></i>
+                    <span>Quejas</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsTipoTot?.queja ?? 0 }}</div>
+              </p-card>
+
+              <p-card class="eq-card kpi-card">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="Total de PQRs tipo RECLAMO" tooltipPosition="top">
+                    <i class="pi pi-exclamation-triangle kpi-icon kpi-red"></i>
+                    <span>Reclamos</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsTipoTot?.reclamo ?? 0 }}</div>
+              </p-card>
+
+              <p-card class="eq-card kpi-card">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header" pTooltip="Total de PQRs tipo SUGERENCIA" tooltipPosition="top">
+                    <i class="pi pi-lightbulb kpi-icon kpi-amber"></i>
+                    <span>Sugerencias</span>
+                  </div>
+                </ng-template>
+                <div class="kpi">{{ pqrsTipoTot?.sugerencia ?? 0 }}</div>
+              </p-card>
             </div>
           </div>
+
+          <!-- <p-divider class="col-12" type="solid"></p-divider> -->
+
 
 
           <p-divider class="col-12" type="solid"></p-divider>
@@ -428,6 +481,14 @@
                     <td class="text-right">{{ r.total }}</td>
                   </tr>
                 </ng-template>
+                <!-- NUEVO: footer con total de TODAS las filas -->
+                <ng-template pTemplate="footer">
+                  <tr>
+                    <td class="text-right"><strong>Total (global)</strong></td>
+                    <td class="text-right"><strong>{{ pqrsCatTotalAll }}</strong></td>
+                  </tr>
+                </ng-template>
+
               </p-table>
             </p-card>
           </div>
@@ -447,6 +508,14 @@
                     <td class="text-right">{{ r.total }}</td>
                   </tr>
                 </ng-template>
+
+                <ng-template pTemplate="footer">
+                  <tr>
+                    <td class="text-right"><strong>Total (global)</strong></td>
+                    <td class="text-right"><strong>{{ pqrsCatPadreTotalAll }}</strong></td>
+                  </tr>
+                </ng-template>
+
               </p-table>
             </p-card>
           </div>

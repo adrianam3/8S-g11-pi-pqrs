@@ -276,6 +276,9 @@ export class Dashboard implements OnInit, AfterViewInit {
   pqrsCat: Array<{ categoria: string; total: number }> = [];
   pqrsCatPadre: Array<{ categoria_padre: string; total: number }> = [];
 
+  // para totales encuesstas tabla
+  pqrsCatTotalAll = 0;
+  pqrsCatPadreTotalAll = 0;
 
   // Tab activo (0..4)
   selectedTabIndex = 0;
@@ -293,29 +296,36 @@ export class Dashboard implements OnInit, AfterViewInit {
   npsGaugeData: any = null;
   npsGaugeOptions: any = null;
 
-// 28/09/2025
+  // 28/09/2025
 
-/* ===== NPS extra (tab 4) ===== */
-npsEntidadRows: Array<{
-  idEncuesta: number; encuesta: string; canal: string;
-  idAsesor: number | null; asesor: string | null;
-  idAgencia: number | null; agencia: string | null;
-  total_nps: number; detractores: number; pasivos: number; promotores: number;
-  detractores_pct: number; pasivos_pct: number; promotores_pct: number; nps: number;
-}> = [];
+  /* ===== NPS extra (tab 4) ===== */
+  npsEntidadRows: Array<{
+    idEncuesta: number; encuesta: string; canal: string;
+    idAsesor: number | null; asesor: string | null;
+    idAgencia: number | null; agencia: string | null;
+    total_nps: number; detractores: number; pasivos: number; promotores: number;
+    detractores_pct: number; pasivos_pct: number; promotores_pct: number; nps: number;
+  }> = [];
 
-npsClientesRows: Array<{
-  idEncuesta: number; encuesta: string; canal: string;
-  idAsesor: number | null; asesor: string | null;
-  idAgencia: number | null; agencia: string | null;
-  idCliente: number | null; cliente: string | null; celular: string | null; email: string | null;
-  nps_val: number | null; clasificacion_nps: 'PROMOTOR' | 'PASIVO' | 'DETRACTOR' | 'SIN NPS';
-}> = [];
+  npsClientesRows: Array<{
+    idEncuesta: number; encuesta: string; canal: string;
+    idAsesor: number | null; asesor: string | null;
+    idAgencia: number | null; agencia: string | null;
+    idCliente: number | null; cliente: string | null; celular: string | null; email: string | null;
+    nps_val: number | null; clasificacion_nps: 'PROMOTOR' | 'PASIVO' | 'DETRACTOR' | 'SIN NPS';
+  }> = [];
 
-loadingNpsExtra = false;
-public filtroIdEncuesta: number | null = null; // opcional, para filtrar el resumen
+  pqrsTipoTot: { peticion: number; queja: number; reclamo: number; sugerencia: number; total: number } =
+    { peticion: 0, queja: 0, reclamo: 0, sugerencia: 0, total: 0 };
 
-// fin 28/09/2025
+
+
+  loadingNpsExtra = false;
+  public filtroIdEncuesta: number | null = null; // opcional, para filtrar el resumen
+
+
+
+  // fin 28/09/2025
 
 
   /** Verifica si el donut tiene algún dato > 0 */
@@ -355,17 +365,17 @@ public filtroIdEncuesta: number | null = null; // opcional, para filtrar el resu
   //   if (this.selectedTabIndex === 4) this.updateNpsGauge(this.kpis?.nps ?? 0);
   //    this.loadNpsExtra(); // ← aquí
   // }
-onTabChange(next: number | string) {
-  const n = typeof next === 'string' ? parseInt(next, 10) : next;
-  this.selectedTabIndex = Number.isFinite(n) ? Math.min(Math.max(n as number, 0), 4) : 0;
-  localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
+  onTabChange(next: number | string) {
+    const n = typeof next === 'string' ? parseInt(next, 10) : next;
+    this.selectedTabIndex = Number.isFinite(n) ? Math.min(Math.max(n as number, 0), 4) : 0;
+    localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
 
-  if (this.selectedTabIndex === 3) this.loadSeries();
-  if (this.selectedTabIndex === 4) {
-    this.updateNpsGauge(this.kpis?.nps ?? 0);
-    this.loadNpsExtra();           // ← aquí dentro
+    if (this.selectedTabIndex === 3) this.loadSeries();
+    if (this.selectedTabIndex === 4) {
+      this.updateNpsGauge(this.kpis?.nps ?? 0);
+      this.loadNpsExtra();           // ← aquí dentro
+    }
   }
-}
 
   /* ===== Carga de datos ===== */
   refresh() {
@@ -404,7 +414,7 @@ onTabChange(next: number | string) {
           this.encuestasMatrizTotals = this.computeTotalsSimple(this.encuestasMatriz);
         });
 
-        if (this.selectedTabIndex === 4) this.loadNpsExtra();
+      if (this.selectedTabIndex === 4) this.loadNpsExtra();
 
 
       if (this.selectedTabIndex === 3) this.loadSeries();
@@ -437,6 +447,16 @@ onTabChange(next: number | string) {
     this.pqrsEstadoOpts = this.makeBarNumberOptions('', 0);
     this.pqrsCat = res.pqrsPorCategoria || [];
     this.pqrsCatPadre = res.pqrsPorCategoriaPadre || [];
+    this.pqrsTipoTot = res.pqrsTipoTot || { peticion:0, queja:0, reclamo:0, sugerencia:0, total:0 };
+    
+    // << NUEVO: totales globales para las tablas paginadas >>
+    this.pqrsCatTotalAll = Array.isArray(this.pqrsCat)
+      ? this.pqrsCat.reduce((a, r) => a + (Number(r?.total) || 0), 0)
+      : 0;
+
+    this.pqrsCatPadreTotalAll = Array.isArray(this.pqrsCatPadre)
+      ? this.pqrsCatPadre.reduce((a, r) => a + (Number(r?.total) || 0), 0)
+      : 0;
 
     // NPS gauge
     this.updateNpsGauge(this.kpis?.nps ?? 0);
@@ -837,47 +857,47 @@ onTabChange(next: number | string) {
 
   }
 
-// nps detalle
+  // nps detalle
 
-/** Color azul igual al del velocímetro */
-get npsBrandColor(): string {
-  return '#1e88e5';
-}
+  /** Color azul igual al del velocímetro */
+  get npsBrandColor(): string {
+    return '#1e88e5';
+  }
 
 
-/* ========= Utils de color (una sola vez en la clase) ========= */
-// private clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
- clamp01 = (t: number) => Math.max(0, Math.min(1, t));
+  /* ========= Utils de color (una sola vez en la clase) ========= */
+  // private clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
+  clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 
-// private hexToRgb(hex: string) {
-//   const m = hex.replace('#', '');
-//   const v = m.length === 3
-//     ? m.split('').map(c => parseInt(c + c, 16))
-//     : [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
-//   return { r: v[0], g: v[1], b: v[2] };
-// }
+  // private hexToRgb(hex: string) {
+  //   const m = hex.replace('#', '');
+  //   const v = m.length === 3
+  //     ? m.split('').map(c => parseInt(c + c, 16))
+  //     : [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
+  //   return { r: v[0], g: v[1], b: v[2] };
+  // }
 
-// private rgbToHex(r: number, g: number, bVal: number) {
-//   const to = (n: number) => n.toString(16).padStart(2, '0');
-//   return `#${to(r)}${to(g)}${to(bVal)}`;
-// }
+  // private rgbToHex(r: number, g: number, bVal: number) {
+  //   const to = (n: number) => n.toString(16).padStart(2, '0');
+  //   return `#${to(r)}${to(g)}${to(bVal)}`;
+  // }
 
-// /** Mezcla dos colores hex en proporción t (0..1) */
-// private mixHex(hexA: string, hexB: string, t: number) {
-//   const A = this.hexToRgb(hexA);
-//   const B = this.hexToRgb(hexB);
-//   const k = this.clamp01(t);
-//   const r = Math.round(A.r + (B.r - A.r) * k);
-//   const g = Math.round(A.g + (B.g - A.g) * k);
-//   const bVal = Math.round(A.b + (B.b - A.b) * k);
-//   return this.rgbToHex(r, g, bVal);
-// }
+  // /** Mezcla dos colores hex en proporción t (0..1) */
+  // private mixHex(hexA: string, hexB: string, t: number) {
+  //   const A = this.hexToRgb(hexA);
+  //   const B = this.hexToRgb(hexB);
+  //   const k = this.clamp01(t);
+  //   const r = Math.round(A.r + (B.r - A.r) * k);
+  //   const g = Math.round(A.g + (B.g - A.g) * k);
+  //   const bVal = Math.round(A.b + (B.b - A.b) * k);
+  //   return this.rgbToHex(r, g, bVal);
+  // }
 
-hexToRgb = (hex: string) => {
+  hexToRgb = (hex: string) => {
     const m = hex.replace('#', '');
     const v = m.length === 3
       ? m.split('').map(c => parseInt(c + c, 16))
-      : [parseInt(m.slice(0,2),16), parseInt(m.slice(2,4),16), parseInt(m.slice(4,6),16)];
+      : [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
     return { r: v[0], g: v[1], b: v[2] };
   };
 
@@ -894,28 +914,28 @@ hexToRgb = (hex: string) => {
     return this.rgbToHex(r, g, bb);
   };
 
-/* ========= Gradientes por grupo ========= */
+  /* ========= Gradientes por grupo ========= */
 
-/** ------- Helpers de color públicos para el template ------- */
-// public promColor = (p: number): string =>
-//   this.mixHex('#86efac', '#16a34a', this.clamp01((p || 0) / 100));
+  /** ------- Helpers de color públicos para el template ------- */
+  // public promColor = (p: number): string =>
+  //   this.mixHex('#86efac', '#16a34a', this.clamp01((p || 0) / 100));
 
-// public pasivoColor = (p: number): string =>
-//   this.mixHex('#86efac', '#facc15', this.clamp01((p || 0) / 100));
+  // public pasivoColor = (p: number): string =>
+  //   this.mixHex('#86efac', '#facc15', this.clamp01((p || 0) / 100));
 
-// public detrColor = (p: number): string =>
-//   this.mixHex('#f97316', '#ef4444', this.clamp01((p || 0) / 100));
+  // public detrColor = (p: number): string =>
+  //   this.mixHex('#f97316', '#ef4444', this.clamp01((p || 0) / 100));
   promColor = (p: number) => this.mixHex('#86efac', '#16a34a', this.clamp01((p || 0) / 100));
   pasivoColor = (p: number) => this.mixHex('#86efac', '#facc15', this.clamp01((p || 0) / 100));
   detrColor = (p: number) => this.mixHex('#f97316', '#ef4444', this.clamp01((p || 0) / 100));
 
 
-/** Aplica el color al ProgressBar (usado con [ngStyle]) */
-// public barStyle = (color: string) => ({
-//   '--bar-color': color,
-//   '--p-progressbar-value-background': color,
-//   '--p-progressbar-value-border-color': color
-// }) as any;
+  /** Aplica el color al ProgressBar (usado con [ngStyle]) */
+  // public barStyle = (color: string) => ({
+  //   '--bar-color': color,
+  //   '--p-progressbar-value-background': color,
+  //   '--p-progressbar-value-border-color': color
+  // }) as any;
 
   barStyle = (color: string) => ({
     '--bar-color': color,
@@ -923,73 +943,73 @@ hexToRgb = (hex: string) => {
     '--p-progressbar-value-border-color': color,
   }) as any;
 
-  
-// nuevo nps detalle
 
-// // private 
-// loadNpsExtra() {
-//   const inicio = this.startDate ? this.toYmd(this.startDate) : null;
-//   const fin = this.endDate ? this.toYmd(this.endDate) : null;
-//   if (!inicio || !fin) return;
+  // nuevo nps detalle
 
-//   this.loadingNpsExtra = true;
+  // // private 
+  // loadNpsExtra() {
+  //   const inicio = this.startDate ? this.toYmd(this.startDate) : null;
+  //   const fin = this.endDate ? this.toYmd(this.endDate) : null;
+  //   if (!inicio || !fin) return;
 
-//   const range: [string, string] = [inicio, fin];
+  //   this.loadingNpsExtra = true;
 
-//   forkJoin([
-//     this.dashboardService.getNpsResumenEntidad({ range, idEncuesta: this.filtroIdEncuesta ?? undefined }),
-//     this.dashboardService.getNpsClientes({ range })
-//   ])
-//   .pipe(finalize(() => this.loadingNpsExtra = false))
-//   .subscribe({
-//     next: ([entidad, clientes]) => {
-//       this.npsEntidadRows  = entidad  ?? [];
-//       this.npsClientesRows = clientes ?? [];
-//     },
-//     error: () => {
-//       this.npsEntidadRows  = [];
-//       this.npsClientesRows = [];
-//     }
-//   });
-// }
-public loadNpsExtra = async (): Promise<void> => {
-  const inicio = this.startDate ? this.toYmd(this.startDate) : null;
-  const fin = this.endDate ? this.toYmd(this.endDate) : null;
-  if (!inicio || !fin) return;
+  //   const range: [string, string] = [inicio, fin];
 
-  this.loadingNpsExtra = true;
-  const range = [inicio, fin] as [string, string];
+  //   forkJoin([
+  //     this.dashboardService.getNpsResumenEntidad({ range, idEncuesta: this.filtroIdEncuesta ?? undefined }),
+  //     this.dashboardService.getNpsClientes({ range })
+  //   ])
+  //   .pipe(finalize(() => this.loadingNpsExtra = false))
+  //   .subscribe({
+  //     next: ([entidad, clientes]) => {
+  //       this.npsEntidadRows  = entidad  ?? [];
+  //       this.npsClientesRows = clientes ?? [];
+  //     },
+  //     error: () => {
+  //       this.npsEntidadRows  = [];
+  //       this.npsClientesRows = [];
+  //     }
+  //   });
+  // }
+  public loadNpsExtra = async (): Promise<void> => {
+    const inicio = this.startDate ? this.toYmd(this.startDate) : null;
+    const fin = this.endDate ? this.toYmd(this.endDate) : null;
+    if (!inicio || !fin) return;
 
-  forkJoin({
-    entidad: this.dashboardService.getNpsResumenEntidad({ range, idEncuesta: this.filtroIdEncuesta ?? undefined }),
-    clientes: this.dashboardService.getNpsClientes({ range })
-  }).subscribe({
-    next: ({ entidad, clientes }) => {
-      this.npsEntidadRows = entidad ?? [];
-      this.npsClientesRows = clientes ?? [];
-    },
-    error: () => { this.loadingNpsExtra = false; },
-    complete: () => { this.loadingNpsExtra = false; }
-  });
-};
+    this.loadingNpsExtra = true;
+    const range = [inicio, fin] as [string, string];
 
-public npsClass(n: number | null | undefined) {
-  const v = Number(n ?? 0);
-  if (v >= 50) return 'badge badge-green';
-  if (v >= 0) return 'badge badge-lime';
-  if (v >= -50) return 'badge badge-orange';
-  return 'badge badge-red';
-}
-public clasifClass(c: string | null | undefined) {
-  switch ((c ?? '').toUpperCase()) {
-    case 'PROMOTOR': return 'badge badge-green';
-    case 'PASIVO': return 'badge badge-amber';
-    case 'DETRACTOR': return 'badge badge-red';
-    default: return 'badge';
+    forkJoin({
+      entidad: this.dashboardService.getNpsResumenEntidad({ range, idEncuesta: this.filtroIdEncuesta ?? undefined }),
+      clientes: this.dashboardService.getNpsClientes({ range })
+    }).subscribe({
+      next: ({ entidad, clientes }) => {
+        this.npsEntidadRows = entidad ?? [];
+        this.npsClientesRows = clientes ?? [];
+      },
+      error: () => { this.loadingNpsExtra = false; },
+      complete: () => { this.loadingNpsExtra = false; }
+    });
+  };
+
+  public npsClass(n: number | null | undefined) {
+    const v = Number(n ?? 0);
+    if (v >= 50) return 'badge badge-green';
+    if (v >= 0) return 'badge badge-lime';
+    if (v >= -50) return 'badge badge-orange';
+    return 'badge badge-red';
   }
-}
+  public clasifClass(c: string | null | undefined) {
+    switch ((c ?? '').toUpperCase()) {
+      case 'PROMOTOR': return 'badge badge-green';
+      case 'PASIVO': return 'badge badge-amber';
+      case 'DETRACTOR': return 'badge badge-red';
+      default: return 'badge';
+    }
+  }
 
 
-// fin nuevo nps detalle
+  // fin nuevo nps detalle
 
 }

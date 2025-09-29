@@ -17,6 +17,7 @@ export interface OverviewResponse {
   pqrsPorEstado: Array<{ estado: string; total: number }>;
   pqrsPorCategoria: Array<{ categoria: string; total: number }>;
   pqrsPorCategoriaPadre: Array<{ categoria_padre: string; total: number }>;
+  pqrsTipoTot?: PqrsTipoTot; // <--- NUEVO
 }
 
 /* Tipos de los endpoints adicionales (opcional) */
@@ -35,6 +36,10 @@ export interface EncuestaMatrizRow {
   enviadas: number;
   respondidas: number;
   tasa_pct: number;
+}
+
+export interface PqrsTipoTot {
+  peticion: number; queja: number; reclamo: number; sugerencia: number; total: number;
 }
 
 
@@ -114,6 +119,12 @@ export class DashboardService {
     return this.api.get(`${this.base}${op}`, this.buildParams(p));
   }
 
+private pqrsTipoTotales(p: any) { 
+  return this.api.get(`${this.base}pqrs_tipo_totales`, this.buildParams(p)); 
+}
+
+
+
   /* =======================
      Punto único para la vista
      ======================= */
@@ -132,6 +143,8 @@ export class DashboardService {
       pqrsEstado: this.pqrsEstado(params).pipe(catchError(() => of([]))),
       pqrsCat: this.pqrsPorCategoria(params).pipe(catchError(() => of([]))),
       pqrsCatPadre: this.pqrsPorCategoriaPadre(params).pipe(catchError(() => of([]))),
+      pqrsTipoTot: this.pqrsTipoTotales(params).pipe(catchError(() => of(null))),
+
     }).pipe(
       map((r): OverviewResponse => {
         const overview = r.cards ?? {
@@ -152,6 +165,8 @@ export class DashboardService {
         const pqrsPorCategoria = Array.isArray(r.pqrsCat) ? r.pqrsCat : [];
         const pqrsPorCategoriaPadre = Array.isArray(r.pqrsCatPadre) ? r.pqrsCatPadre : [];
 
+        const pqrsTipoTot = r.pqrsTipoTot ?? { peticion:0, queja:0, reclamo:0, sugerencia:0, total:0 };
+
         return {
           kpis: r.kpis ?? { csat: 0, nps: 0, ces: 0, nps_breakdown: { promotores_pct: 0, pasivos_pct: 0, detractores_pct: 0 } },
           overview,
@@ -162,7 +177,8 @@ export class DashboardService {
           cesPorSegmento,
           pqrsPorEstado,
           pqrsPorCategoria,
-          pqrsPorCategoriaPadre
+          pqrsPorCategoriaPadre, 
+          pqrsTipoTot
         } as OverviewResponse;
       })
     );
