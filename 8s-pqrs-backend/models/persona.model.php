@@ -54,10 +54,10 @@ class Persona
     {
         $con = new ClaseConectar();
         $con = $con->ProcedimientoParaConectar();
-        $cadena = "SELECT persona.* 
-        FROM `persona`
-        LEFT JOIN `usuario` ON usuario.idPersona = persona.idPersona
-        WHERE usuario.idPersona IS NULL;
+        $cadena = "SELECT personas.* 
+        FROM `personas`
+        LEFT JOIN `usuarios` ON usuarios.idPersona = personas.idPersona
+        WHERE usuarios.idPersona IS NULL;
         ";
         $datos = mysqli_query($con, $cadena);
         $con->close();
