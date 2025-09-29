@@ -95,7 +95,11 @@ export const appRoutes: Routes = [
                 loadChildren: () =>
                     import('./app/modules/dashboard/dashboard.routes').then((m) => m.dashboardRoutes)
             },
-
+            {
+                path: 'persona',
+                loadChildren: () =>
+                    import('./app/modules/persona/persona.routes').then((m) => m.personaRoutes)
+            },
             // dashboard anterior 
 
             { path: 'dashOld', component: Dashboard },

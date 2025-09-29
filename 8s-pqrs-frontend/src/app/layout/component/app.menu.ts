@@ -32,6 +32,7 @@ export class AppMenu {
                 items: [
                     { label: 'Roles', icon: 'pi pi-fw pi-receipt', routerLink: ['/rol'] },
                     { label: 'Usuarios', icon: 'pi pi-fw pi-users', routerLink: ['/usuario'] },
+                     { label: 'Personas', icon: 'pi pi-fw pi-users', routerLink: ['/persona'] },
                 ]
             },
             {
