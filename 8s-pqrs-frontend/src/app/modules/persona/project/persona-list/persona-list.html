@@ -19,13 +19,13 @@
     dataKey="idPersona"
     [paginator]="true"
     [rows]="10"
-    [globalFilterFields]="['documento','nombres','apellidos','email','celular','estado']"
+    [globalFilterFields]="['cedula','nombres','apellidos','email','celular','estado']"
     [filters]="{ 'global': { value: globalFilter, matchMode: 'contains' } }"
     responsiveLayout="scroll">
 
     <ng-template pTemplate="header">
       <tr>
-        <th style="min-width: 10rem">Documento</th>
+        <th style="min-width: 10rem">cedula</th>
         <th style="min-width: 14rem">Nombres</th>
         <th style="min-width: 14rem">Apellidos</th>
         <th style="min-width: 18rem">E-mail</th>
@@ -38,7 +38,7 @@
 
     <ng-template pTemplate="body" let-r>
       <tr>
-        <td>{{ r.documento || '-' }}</td>
+        <td>{{ r.cedula || '-' }}</td>
         <td>{{ r.nombres }}</td>
         <td>{{ r.apellidos }}</td>
         <td>{{ r.email || '-' }}</td>
@@ -83,8 +83,8 @@
 
   <div class="grid formgrid">
     <div class="col-12 md:col-6">
-      <label class="block mb-2">Documento</label>
-      <input pInputText type="text" [(ngModel)]="form.documento" placeholder="Cédula/RUC/DNI">
+      <label class="block mb-2">cedula</label>
+      <input pInputText type="text" [(ngModel)]="form.cedula" placeholder="Cédula/RUC/DNI">
     </div>
 
     <div class="col-12 md:col-6">

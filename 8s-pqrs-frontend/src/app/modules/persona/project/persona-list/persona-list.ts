@@ -31,7 +31,7 @@ import { ApiService } from '@/modules/Services/api-service';
 /* ====== Modelo base (ajústalo si tu tabla tiene más/menos campos) ====== */
 export interface Persona {
   idPersona: number;
-  documento?: string | null;   // cédula/RUC/DNI
+  cedula?: string | null;   // cédula/RUC/DNI
   nombres: string;
   apellidos: string;
   celular?: string | null;
@@ -67,7 +67,7 @@ export class PersonaList implements OnInit {
 
   form: Partial<Persona> = {
     idPersona: 0,
-    documento: '',
+    cedula: '',
     nombres: '',
     apellidos: '',
     celular: '',
@@ -123,7 +123,7 @@ export class PersonaList implements OnInit {
     const estadoNum = (this.form.estado ?? 'Activo') === 'Activo' ? 1 : 0;
     const payload: any = {
       idPersona: this.form.idPersona,                 // requerido en actualizar
-      cedula: (this.form.documento ?? '').trim(),     // controller lo llama 'cedula'
+      cedula: (this.form.cedula ?? '').trim(),     // controller lo llama 'cedula'
       nombres: (this.form.nombres ?? '').trim(),
       apellidos: (this.form.apellidos ?? '').trim(),
       direccion: '',                                  // campos no presentes en el form
@@ -213,7 +213,7 @@ export class PersonaList implements OnInit {
     this.dialogTitle = 'Nueva Persona';
     this.form = {
       idPersona: 0,
-      documento: '',
+      cedula: '',
       nombres: '',
       apellidos: '',
       celular: '',
