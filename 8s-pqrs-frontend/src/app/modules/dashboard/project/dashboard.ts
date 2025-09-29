@@ -1,5 +1,6 @@
 import { Component, OnInit, AfterViewInit, ElementRef, ViewChild, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
+// import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf, NgForOf, NgClass, NgStyle } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -16,6 +17,10 @@ import { PanelModule } from 'primeng/panel';
 import { DividerModule } from 'primeng/divider';
 import { TabsModule } from 'primeng/tabs';
 import { SkeletonModule } from 'primeng/skeleton';
+
+import { forkJoin } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+
 
 /* Chart.js */
 import Chart from 'chart.js/auto';
@@ -176,6 +181,11 @@ if (!(Chart as any)._npsGaugeRegistered) {
 
 
 
+
+
+
+
+
 /* ===== Servicio ===== */
 import { DashboardService, EncuestaMatrizRow } from '@/modules/Services/dashboard-service';
 
@@ -204,7 +214,7 @@ interface PqrsResumen { total: number; abiertos: number; en_proceso: number; esc
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, NgIf, NgForOf, NgClass, NgStyle,
     ToolbarModule, DatePickerModule, SelectModule, ButtonModule,
     CardModule, ChartModule, TableModule, ProgressBarModule, PanelModule, DividerModule,
     TabsModule, TooltipModule, SkeletonModule
@@ -283,6 +293,31 @@ export class Dashboard implements OnInit, AfterViewInit {
   npsGaugeData: any = null;
   npsGaugeOptions: any = null;
 
+// 28/09/2025
+
+/* ===== NPS extra (tab 4) ===== */
+npsEntidadRows: Array<{
+  idEncuesta: number; encuesta: string; canal: string;
+  idAsesor: number | null; asesor: string | null;
+  idAgencia: number | null; agencia: string | null;
+  total_nps: number; detractores: number; pasivos: number; promotores: number;
+  detractores_pct: number; pasivos_pct: number; promotores_pct: number; nps: number;
+}> = [];
+
+npsClientesRows: Array<{
+  idEncuesta: number; encuesta: string; canal: string;
+  idAsesor: number | null; asesor: string | null;
+  idAgencia: number | null; agencia: string | null;
+  idCliente: number | null; cliente: string | null; celular: string | null; email: string | null;
+  nps_val: number | null; clasificacion_nps: 'PROMOTOR' | 'PASIVO' | 'DETRACTOR' | 'SIN NPS';
+}> = [];
+
+loadingNpsExtra = false;
+public filtroIdEncuesta: number | null = null; // opcional, para filtrar el resumen
+
+// fin 28/09/2025
+
+
   /** Verifica si el donut tiene algún dato > 0 */
   hasDonutData(): boolean {
     const arr = this.donutData?.datasets?.[0]?.data as number[] | undefined;
@@ -311,14 +346,26 @@ export class Dashboard implements OnInit, AfterViewInit {
   onPeriodoChange() { this.refresh(); }
   onSegmentChange() { this.refresh(); }
 
-  onTabChange(next: number | string) {
-    const n = typeof next === 'string' ? parseInt(next, 10) : next;
-    this.selectedTabIndex = Number.isFinite(n) ? Math.min(Math.max(n as number, 0), 4) : 0;
-    localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
+  // onTabChange(next: number | string) {
+  //   const n = typeof next === 'string' ? parseInt(next, 10) : next;
+  //   this.selectedTabIndex = Number.isFinite(n) ? Math.min(Math.max(n as number, 0), 4) : 0;
+  //   localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
 
-    if (this.selectedTabIndex === 3) this.loadSeries();
-    if (this.selectedTabIndex === 4) this.updateNpsGauge(this.kpis?.nps ?? 0);
+  //   if (this.selectedTabIndex === 3) this.loadSeries();
+  //   if (this.selectedTabIndex === 4) this.updateNpsGauge(this.kpis?.nps ?? 0);
+  //    this.loadNpsExtra(); // ← aquí
+  // }
+onTabChange(next: number | string) {
+  const n = typeof next === 'string' ? parseInt(next, 10) : next;
+  this.selectedTabIndex = Number.isFinite(n) ? Math.min(Math.max(n as number, 0), 4) : 0;
+  localStorage.setItem('dashboard.activeTab', String(this.selectedTabIndex));
+
+  if (this.selectedTabIndex === 3) this.loadSeries();
+  if (this.selectedTabIndex === 4) {
+    this.updateNpsGauge(this.kpis?.nps ?? 0);
+    this.loadNpsExtra();           // ← aquí dentro
   }
+}
 
   /* ===== Carga de datos ===== */
   refresh() {
@@ -356,6 +403,9 @@ export class Dashboard implements OnInit, AfterViewInit {
           this.encuestasMatriz = Array.isArray(rows) ? rows : [];
           this.encuestasMatrizTotals = this.computeTotalsSimple(this.encuestasMatriz);
         });
+
+        if (this.selectedTabIndex === 4) this.loadNpsExtra();
+
 
       if (this.selectedTabIndex === 3) this.loadSeries();
     }
@@ -745,130 +795,7 @@ export class Dashboard implements OnInit, AfterViewInit {
     return { programadas, enviadas, respondidas, tasa_pct };
   }
 
-  // /* ===== NPS gauge ===== */
-  // private updateNpsGauge(nps: number | null | undefined) {
-  //   const val = Number(nps ?? 0);
-  //   const v = Math.min(100, Math.max(-100, isFinite(val) ? val : 0)); // clamp
 
-  //   // 3 zonas: rojo (-100..-1), amarillo (0..49), verde (50..100)
-  //   // usamos valores iguales (100,100,100) porque el arco es semicircular con total 300
-  //   this.npsGaugeData = {
-  //     labels: ['Bajo', 'Medio', 'Alto'],
-  //     datasets: [
-  //       {
-  //         data: [100, 100, 100],
-  //         borderWidth: 0,
-  //         backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
-  //         hoverBackgroundColor: ['#ef4444', '#f59e0b', '#10b981']
-  //       }
-  //     ]
-  //   };
-
-  //   this.npsGaugeOptions = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     rotation: Math.PI,       // inicia a 180°
-  //     circumference: Math.PI,  // 180°
-  //     cutout: '70%',
-  //     plugins: {
-  //       legend: { display: false },
-  //       datalabels: { display: false },
-  //       // activar el plugin SOLO en este chart
-  //       npsGauge: { enabled: true, value: v }
-  //     }
-  //   };
-  // }
-
-  /* ===== NPS gauge ===== */
-  // private updateNpsGauge(nps: number | null | undefined) {
-  //   const val = Number.isFinite(nps as number) ? Number(nps) : 0;
-  //   const v = Math.max(-100, Math.min(100, val)); // clamp
-
-  //   // Fondo fijo: mitad roja (−100..0) y mitad verde (0..100)
-  //   this.npsGaugeData = {
-  //     labels: ['< 0', '≥ 0'],
-  //     datasets: [{
-  //       data: [100, 100],                 // siempre 50/50 (semicírculo)
-  //       borderWidth: 0,
-  //       backgroundColor: ['#ef4444', '#10b981'],
-  //       hoverBackgroundColor: ['#ef4444', '#10b981'],
-  //     }]
-  //   };
-
-  //   //   this.npsGaugeOptions = {
-  //   //     responsive: true,
-  //   //     maintainAspectRatio: false,
-  //   //     // rotation: Math.PI,       // 180°
-  //   //     // circumference: Math.PI,  // semicírculo
-  //   // rotation: -90,          // inicia arriba (top)
-  //   // circumference: 180,     // semicírculo superior
-
-
-  //   //     cutout: '60%',
-  //   //     plugins: {
-  //   //       legend: { display: false },
-  //   //       datalabels: { display: false },
-  //   //       // ← activa el plugin SOLO en este chart y pásale el valor
-  //   //       npsGauge: { enabled: true, value: v }
-  //   //     }
-  //   //   };
-  //   this.npsGaugeOptions = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     rotation: -90,         // <-- grados
-  //     circumference: 180,    // <-- grados
-  //     cutout: '60%',
-  //     plugins: {
-  //       legend: { display: false },
-  //       datalabels: { display: false },
-  //       npsGauge: { enabled: true, value: v }
-  //     }
-  //   };
-
-
-  // }
-
-  // private updateNpsGauge(nps: number | null | undefined) {
-  //   const raw = Number(nps ?? 0);
-  //   const v = Math.min(100, Math.max(-100, isFinite(raw) ? raw : 0));
-
-  //   // 8 segmentos (−100..100 en saltos de 25) con degradado rojo→verde
-  //   const SEGMENTS = 8;
-  //   this.npsGaugeData = {
-  //     labels: Array.from({ length: SEGMENTS }, () => ''),
-  //     datasets: [{
-  //       // todos iguales; el total del semicírculo da lo mismo mientras sean uniformes
-  //       data: Array.from({ length: SEGMENTS }, () => 100),
-  //       borderWidth: 8,                 // separadores blancos entre segmentos
-  //       borderColor: '#ffffff',
-  //       borderJoinStyle: 'round' as const,
-  //       borderRadius: 10,               // puntas suaves
-  //       backgroundColor: [
-  //         '#ef4444', '#f97316', '#f59e0b', '#facc15',
-  //         '#a3e635', '#86efac', '#22c55e', '#16a34a'
-  //       ],
-  //       hoverBackgroundColor: [
-  //         '#ef4444', '#f97316', '#f59e0b', '#facc15',
-  //         '#a3e635', '#86efac', '#22c55e', '#16a34a'
-  //       ]
-  //     }]
-  //   };
-
-  //   this.npsGaugeOptions = {
-  //     responsive: true,
-  //     maintainAspectRatio: false,
-  //     rotation: -90,          // grados: empieza arriba
-  //     circumference: 180,     // grados: semicírculo
-  //     cutout: '65%',          // grosor del anillo
-  //     layout: { padding: { top: 8, bottom: 0 } },
-  //     plugins: {
-  //       legend: { display: false },
-  //       datalabels: { display: false },
-  //       // Activamos SÓLO para este gráfico
-  //       npsGauge: { enabled: true, value: v }
-  //     }
-  //   };
-  // }
   private updateNpsGauge(nps: number | null | undefined) {
     const raw = Number(nps ?? 0);
     const v = Math.min(100, Math.max(-100, isFinite(raw) ? raw : 0));
@@ -893,19 +820,7 @@ export class Dashboard implements OnInit, AfterViewInit {
       }]
     };
 
-    // // OJO: Chart.js usa GRADOS aquí
-    // this.npsGaugeOptions = {
-    //   responsive: true,
-    //   maintainAspectRatio: false,
-    //   rotation: -90,      // empieza arriba (grados)
-    //   circumference: 180, // semicírculo (grados)
-    //   cutout: '65%',
-    //   plugins: {
-    //     legend: { display: false },
-    //     datalabels: { display: false },
-    //     npsGauge: { enabled: true, value: v } // activa nuestro plugin
-    //   }
-    // } as any;
+
 
     this.npsGaugeOptions = {
       responsive: true,
@@ -929,96 +844,152 @@ get npsBrandColor(): string {
   return '#1e88e5';
 }
 
-/* =========== Colores dinámicos para barras (gradientes) =========== */
+
+/* ========= Utils de color (una sola vez en la clase) ========= */
 // private clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
+ clamp01 = (t: number) => Math.max(0, Math.min(1, t));
+
 // private hexToRgb(hex: string) {
 //   const m = hex.replace('#', '');
 //   const v = m.length === 3
 //     ? m.split('').map(c => parseInt(c + c, 16))
-//     : [parseInt(m.slice(0,2),16), parseInt(m.slice(2,4),16), parseInt(m.slice(4,6),16)];
+//     : [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
 //   return { r: v[0], g: v[1], b: v[2] };
 // }
-// private rgbToHex(r: number, g: number, b: number) {
+
+// private rgbToHex(r: number, g: number, bVal: number) {
 //   const to = (n: number) => n.toString(16).padStart(2, '0');
-//   return `#${to(r)}${to(g)}${to(b)}`;
+//   return `#${to(r)}${to(g)}${to(bVal)}`;
 // }
-// private mix(a: string, b: string, t: number) {
-//   const A = this.hexToRgb(a), B = this.hexToRgb(b);
+
+// /** Mezcla dos colores hex en proporción t (0..1) */
+// private mixHex(hexA: string, hexB: string, t: number) {
+//   const A = this.hexToRgb(hexA);
+//   const B = this.hexToRgb(hexB);
 //   const k = this.clamp01(t);
 //   const r = Math.round(A.r + (B.r - A.r) * k);
 //   const g = Math.round(A.g + (B.g - A.g) * k);
-//   const bch = Math.round(A.b + (B.b - A.b) * k);
-//   return this.rgbToHex(r, g, bch);
+//   const bVal = Math.round(A.b + (B.b - A.b) * k);
+//   return this.rgbToHex(r, g, bVal);
 // }
 
-// /** Verde (claro→oscuro) según % promotores */
-// promColor(p: number): string {
-//   // 0% => verde claro (#86efac), 100% => verde fuerte (#16a34a)
-//   return this.mix('#86efac', '#16a34a', (p || 0) / 100);
-// }
+hexToRgb = (hex: string) => {
+    const m = hex.replace('#', '');
+    const v = m.length === 3
+      ? m.split('').map(c => parseInt(c + c, 16))
+      : [parseInt(m.slice(0,2),16), parseInt(m.slice(2,4),16), parseInt(m.slice(4,6),16)];
+    return { r: v[0], g: v[1], b: v[2] };
+  };
 
-// /** Pasivos: verde claro → amarillo según % (más % = más amarillo) */
-// pasivoColor(p: number): string {
-//   // 0% => verde claro, 100% => amarillo
-//   return this.mix('#86efac', '#facc15', (p || 0) / 100);
-// }
+  rgbToHex = (r: number, g: number, b: number) => {
+    const to = (n: number) => n.toString(16).padStart(2, '0');
+    return `#${to(r)}${to(g)}${to(b)}`;
+  };
 
-// /** Detractores: naranja → rojo según % (más % = más rojo) */
-// detrColor(p: number): string {
-//   // 0% => naranja, 100% => rojo
-//   return this.mix('#f97316', '#ef4444', (p || 0) / 100);
-// }
-
-/* ========= Utils de color (una sola vez en la clase) ========= */
-private clamp01(t: number) { return Math.max(0, Math.min(1, t)); }
-
-private hexToRgb(hex: string) {
-  const m = hex.replace('#', '');
-  const v = m.length === 3
-    ? m.split('').map(c => parseInt(c + c, 16))
-    : [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
-  return { r: v[0], g: v[1], b: v[2] };
-}
-
-private rgbToHex(r: number, g: number, bVal: number) {
-  const to = (n: number) => n.toString(16).padStart(2, '0');
-  return `#${to(r)}${to(g)}${to(bVal)}`;
-}
-
-/** Mezcla dos colores hex en proporción t (0..1) */
-private mixHex(hexA: string, hexB: string, t: number) {
-  const A = this.hexToRgb(hexA);
-  const B = this.hexToRgb(hexB);
-  const k = this.clamp01(t);
-  const r = Math.round(A.r + (B.r - A.r) * k);
-  const g = Math.round(A.g + (B.g - A.g) * k);
-  const bVal = Math.round(A.b + (B.b - A.b) * k);
-  return this.rgbToHex(r, g, bVal);
-}
+  mixHex = (a: string, b: string, t: number) => {
+    const A = this.hexToRgb(a), B = this.hexToRgb(b), k = this.clamp01(t);
+    const r = Math.round(A.r + (B.r - A.r) * k);
+    const g = Math.round(A.g + (B.g - A.g) * k);
+    const bb = Math.round(A.b + (B.b - A.b) * k);
+    return this.rgbToHex(r, g, bb);
+  };
 
 /* ========= Gradientes por grupo ========= */
-// Promotores: 0% => verde claro, 100% => verde fuerte
-promColor(p: number): string {
-  return this.mixHex('#86efac', '#16a34a', this.clamp01((p || 0) / 100));
-}
-// Pasivos: 0% => verde claro, 100% => amarillo
-pasivoColor(p: number): string {
-  return this.mixHex('#86efac', '#facc15', this.clamp01((p || 0) / 100));
-}
-// Detractores: 0% => naranja, 100% => rojo
-detrColor(p: number): string {
-  return this.mixHex('#f97316', '#ef4444', this.clamp01((p || 0) / 100));
-}
 
-/* Aplica el color al ProgressBar */
-barStyle(color: string) {
-  return {
+/** ------- Helpers de color públicos para el template ------- */
+// public promColor = (p: number): string =>
+//   this.mixHex('#86efac', '#16a34a', this.clamp01((p || 0) / 100));
+
+// public pasivoColor = (p: number): string =>
+//   this.mixHex('#86efac', '#facc15', this.clamp01((p || 0) / 100));
+
+// public detrColor = (p: number): string =>
+//   this.mixHex('#f97316', '#ef4444', this.clamp01((p || 0) / 100));
+  promColor = (p: number) => this.mixHex('#86efac', '#16a34a', this.clamp01((p || 0) / 100));
+  pasivoColor = (p: number) => this.mixHex('#86efac', '#facc15', this.clamp01((p || 0) / 100));
+  detrColor = (p: number) => this.mixHex('#f97316', '#ef4444', this.clamp01((p || 0) / 100));
+
+
+/** Aplica el color al ProgressBar (usado con [ngStyle]) */
+// public barStyle = (color: string) => ({
+//   '--bar-color': color,
+//   '--p-progressbar-value-background': color,
+//   '--p-progressbar-value-border-color': color
+// }) as any;
+
+  barStyle = (color: string) => ({
     '--bar-color': color,
     '--p-progressbar-value-background': color,
-    '--p-progressbar-value-border-color': color
-  } as any;
+    '--p-progressbar-value-border-color': color,
+  }) as any;
+
+  
+// nuevo nps detalle
+
+// // private 
+// loadNpsExtra() {
+//   const inicio = this.startDate ? this.toYmd(this.startDate) : null;
+//   const fin = this.endDate ? this.toYmd(this.endDate) : null;
+//   if (!inicio || !fin) return;
+
+//   this.loadingNpsExtra = true;
+
+//   const range: [string, string] = [inicio, fin];
+
+//   forkJoin([
+//     this.dashboardService.getNpsResumenEntidad({ range, idEncuesta: this.filtroIdEncuesta ?? undefined }),
+//     this.dashboardService.getNpsClientes({ range })
+//   ])
+//   .pipe(finalize(() => this.loadingNpsExtra = false))
+//   .subscribe({
+//     next: ([entidad, clientes]) => {
+//       this.npsEntidadRows  = entidad  ?? [];
+//       this.npsClientesRows = clientes ?? [];
+//     },
+//     error: () => {
+//       this.npsEntidadRows  = [];
+//       this.npsClientesRows = [];
+//     }
+//   });
+// }
+public loadNpsExtra = async (): Promise<void> => {
+  const inicio = this.startDate ? this.toYmd(this.startDate) : null;
+  const fin = this.endDate ? this.toYmd(this.endDate) : null;
+  if (!inicio || !fin) return;
+
+  this.loadingNpsExtra = true;
+  const range = [inicio, fin] as [string, string];
+
+  forkJoin({
+    entidad: this.dashboardService.getNpsResumenEntidad({ range, idEncuesta: this.filtroIdEncuesta ?? undefined }),
+    clientes: this.dashboardService.getNpsClientes({ range })
+  }).subscribe({
+    next: ({ entidad, clientes }) => {
+      this.npsEntidadRows = entidad ?? [];
+      this.npsClientesRows = clientes ?? [];
+    },
+    error: () => { this.loadingNpsExtra = false; },
+    complete: () => { this.loadingNpsExtra = false; }
+  });
+};
+
+public npsClass(n: number | null | undefined) {
+  const v = Number(n ?? 0);
+  if (v >= 50) return 'badge badge-green';
+  if (v >= 0) return 'badge badge-lime';
+  if (v >= -50) return 'badge badge-orange';
+  return 'badge badge-red';
+}
+public clasifClass(c: string | null | undefined) {
+  switch ((c ?? '').toUpperCase()) {
+    case 'PROMOTOR': return 'badge badge-green';
+    case 'PASIVO': return 'badge badge-amber';
+    case 'DETRACTOR': return 'badge badge-red';
+    default: return 'badge';
+  }
 }
 
 
+// fin nuevo nps detalle
 
 }

@@ -238,4 +238,33 @@ export class DashboardService {
     // return this.api.get(`${this.base}encuestas_matriz`, params) as Observable<EncuestaMatrizRow[]>;
   }
 
+
+//7 28/09/2025
+// NUEVO: NPS por Encuesta/Canal/Agencia/Asesor
+getNpsResumenEntidad(args: { range: string | [string, string] | string[]; idEncuesta?: number }) {
+  const params = this.buildParams(args);
+  return this.api.get(`${this.base}nps_resumen_entidad`, params) as Observable<Array<{
+    idEncuesta: number; encuesta: string; canal: string;
+    idAsesor: number | null; asesor: string | null;
+    idAgencia: number | null; agencia: string | null;
+    total_nps: number; detractores: number; pasivos: number; promotores: number;
+    detractores_pct: number; pasivos_pct: number; promotores_pct: number; nps: number;
+  }>>;
+}
+
+// NUEVO: NPS – Detalle de Clientes
+getNpsClientes(args: { range: string | [string, string] | string[] }) {
+  const params = this.buildParams(args);
+  return this.api.get(`${this.base}nps_clientes`, params) as Observable<Array<{
+    idEncuesta: number; encuesta: string; canal: string;
+    idAsesor: number | null; asesor: string | null;
+    idAgencia: number | null; agencia: string | null;
+    idCliente: number | null; cliente: string | null; celular: string | null; email: string | null;
+    nps_val: number | null; clasificacion_nps: 'PROMOTOR' | 'PASIVO' | 'DETRACTOR' | 'SIN NPS';
+  }>>;
+}
+
+
+
+  
 }

@@ -513,61 +513,149 @@
       </p-tabpanel>
 
 
-<!-- ========== 4: NPS (gauge) ========== -->
-<p-tabpanel [value]="4">
-  <div class="grid nps-eq-row">
-    <!-- Izquierda: Gauge -->
-    <div class="col-12 lg:col-6">
-      <p-card header="NPS (−100 a 100)" class="eq-card h-100">
-        <div class="chart-holder chart-300">
-          <p-chart type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions"></p-chart>
-        </div>
-      </p-card>
-    </div>
-
-    <!-- Derecha: Detalle -->
-    <div class="col-12 lg:col-6">
-      <p-card header="Detalle NPS" class="eq-card h-100 nps-detail-card">
-        <div class="nps-header">
-          <div class="nps-subtitle">NPS<br><small>Promotores – Detractores</small></div>
-          <div class="nps-score">{{ kpis?.nps ?? 0 }}</div>
-        </div>
-
-        <div class="nps-list">
-          <div class="nps-item">
-            <div class="row">
-              <span>Promotores</span>
-              <span class="pct">{{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}%</span>
-            </div>
-            <p-progressBar class="nps-bar"
-              [style]="barStyle(promColor(kpis?.nps_breakdown?.promotores_pct ?? 0))"
-              [value]="kpis?.nps_breakdown?.promotores_pct ?? 0"></p-progressBar>
+      <!-- ========== 4: NPS (gauge) ========== -->
+      <p-tabpanel [value]="4">
+        <div class="grid nps-eq-row">
+          <!-- Izquierda: Gauge -->
+          <div class="col-12 lg:col-6">
+            <p-card header="NPS (−100 a 100)" class="eq-card h-100">
+              <div class="chart-holder chart-300">
+                <p-chart type="doughnut" [data]="npsGaugeData" [options]="npsGaugeOptions"></p-chart>
+              </div>
+            </p-card>
           </div>
 
-          <div class="nps-item">
-            <div class="row">
-              <span>Pasivos</span>
-              <span class="pct">{{ kpis?.nps_breakdown?.pasivos_pct ?? 0 }}%</span>
-            </div>
-            <p-progressBar class="nps-bar"
-              [style]="barStyle(pasivoColor(kpis?.nps_breakdown?.pasivos_pct ?? 0))"
-              [value]="kpis?.nps_breakdown?.pasivos_pct ?? 0"></p-progressBar>
-          </div>
+          <!-- Derecha: Detalle -->
+          <div class="col-12 lg:col-6">
+            <p-card header="Detalle NPS" class="eq-card h-100 nps-detail-card">
+              <div class="nps-header">
+                <div class="nps-subtitle">NPS<br><small>Promotores – Detractores</small></div>
+                <div class="nps-score">{{ kpis?.nps ?? 0 }}</div>
+              </div>
 
-          <div class="nps-item">
-            <div class="row">
-              <span>Detractores</span>
-              <span class="pct">{{ kpis?.nps_breakdown?.detractores_pct ?? 0 }}%</span>
-            </div>
-            <p-progressBar class="nps-bar"
-              [style]="barStyle(detrColor(kpis?.nps_breakdown?.detractores_pct ?? 0))"
-              [value]="kpis?.nps_breakdown?.detractores_pct ?? 0"></p-progressBar>
+              <div class="nps-list">
+                <div class="nps-item">
+                  <div class="row">
+                    <span>Promotores</span>
+                    <span class="pct">{{ kpis?.nps_breakdown?.promotores_pct ?? 0 }}%</span>
+                  </div>
+                  <p-progressBar class="nps-bar"
+                    [ngStyle]="barStyle(promColor(kpis?.nps_breakdown?.promotores_pct ?? 0))"
+                    [value]="kpis?.nps_breakdown?.promotores_pct ?? 0"></p-progressBar>
+                </div>
+
+                <div class="nps-item">
+                  <div class="row">
+                    <span>Pasivos</span>
+                    <span class="pct">{{ kpis?.nps_breakdown?.pasivos_pct ?? 0 }}%</span>
+                  </div>
+                  <p-progressBar class="nps-bar"
+                    [ngStyle]="barStyle(pasivoColor(kpis?.nps_breakdown?.pasivos_pct ?? 0))"
+                    [value]="kpis?.nps_breakdown?.pasivos_pct ?? 0"></p-progressBar>
+                </div>
+
+                <div class="nps-item">
+                  <div class="row">
+                    <span>Detractores</span>
+                    <span class="pct">{{ kpis?.nps_breakdown?.detractores_pct ?? 0 }}%</span>
+                  </div>
+                  <p-progressBar class="nps-bar"
+                    [ngStyle]="barStyle(detrColor(kpis?.nps_breakdown?.detractores_pct ?? 0))"
+                    [value]="kpis?.nps_breakdown?.detractores_pct ?? 0"></p-progressBar>
+                </div>
+              </div>
+            </p-card>
           </div>
         </div>
-      </p-card>
-    </div>
-  </div>
-</p-tabpanel>
+
+
+
+        <!-- aqui -->
+        <!-- ====== (A) NPS por Encuesta / Canal / Agencia / Asesor ====== -->
+        <div class="col-12">
+          <p-card header="NPS por Encuesta / Canal / Agencia / Asesor" class="eq-card">
+            <div class="flex align-items-center gap-2 mb-3">
+              <!-- Filtro opcional por idEncuesta -->
+              <input type="number" min="0" class="p-inputtext p-component w-10rem" placeholder="idEncuesta (opcional)"
+                [(ngModel)]="filtroIdEncuesta">
+              <button pButton type="button" label="Aplicar" icon="pi pi-filter" (click)="loadNpsExtra()"></button>
+            </div>
+
+            <p-table [value]="npsEntidadRows" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Encuesta</th>
+                  <th>Canal</th>
+                  <th>Agencia</th>
+                  <th>Asesor</th>
+                  <th class="text-right">Total NPS</th>
+                  <th class="text-right">Promotores %</th>
+                  <th class="text-right">Pasivos %</th>
+                  <th class="text-right">Detractores %</th>
+                  <th class="text-right">NPS</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-r>
+                <tr>
+                  <td>{{ r.encuesta }}</td>
+                  <td>{{ r.canal }}</td>
+                  <td>{{ r.agencia }}</td>
+                  <td>{{ r.asesor }}</td>
+                  <td class="text-right">{{ r.total_nps }}</td>
+                  <td class="text-right"><span class="badge badge-green">{{ r.promotores_pct | number:'1.0-0' }}%</span>
+                  </td>
+                  <td class="text-right"><span class="badge badge-amber">{{ r.pasivos_pct | number:'1.0-0' }}%</span>
+                  </td>
+                  <td class="text-right"><span class="badge badge-red">{{ r.detractores_pct | number:'1.0-0' }}%</span>
+                  </td>
+                  <td class="text-right"><span [ngClass]="npsClass(r.nps)">{{ r.nps | number:'1.0-0' }}</span></td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        </div>
+
+        <!-- ====== (B) NPS – Detalle de clientes ====== -->
+        <div class="col-12">
+          <p-card header="NPS – Detalle de clientes" class="eq-card">
+            <p-table [value]="npsClientesRows" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Encuesta</th>
+                  <th>Canal</th>
+                  <th>Agencia</th>
+                  <th>Asesor</th>
+                  <th>Cliente</th>
+                  <th>Celular</th>
+                  <th>Email</th>
+                  <th class="text-right">NPS (prom.)</th>
+                  <th class="text-center">Clasificación</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-r>
+                <tr>
+                  <td>{{ r.encuesta }}</td>
+                  <td>{{ r.canal }}</td>
+                  <td>{{ r.agencia }}</td>
+                  <td>{{ r.asesor }}</td>
+                  <td>{{ r.cliente }}</td>
+                  <td>{{ r.celular }}</td>
+                  <td>{{ r.email }}</td>
+                  <td class="text-right">{{ r.nps_val ?? '-' }}</td>
+                  <td class="text-center">
+                    <span [ngClass]="clasifClass(r.clasificacion_nps)">{{ r.clasificacion_nps }}</span>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        </div>
+
+
+
+
+
+      </p-tabpanel>
 
 
 

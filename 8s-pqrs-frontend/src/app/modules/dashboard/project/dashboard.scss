@@ -905,3 +905,28 @@
 .nps-bar .p-progressbar-value {
   border-radius: 999px !important;
 }
+
+// nps detalle
+
+/* Badges pequeñas para % y NPS en tablas */
+.badge {
+  display: inline-block;
+  padding: .2rem .5rem;
+  border-radius: .5rem;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #0f172a;
+  background: #e5e7eb;
+}
+.badge-green  { background: #86efac; color:#065f46; }
+.badge-lime   { background: #d9f99d; color:#3f6212; }
+.badge-amber  { background: #fde68a; color:#854d0e; }
+.badge-orange { background: #fdba74; color:#7c2d12; }
+.badge-red    { background: #fecaca; color:#7f1d1d; }
+
+.eq-card p-table { --row-gap: .25rem; }
+.eq-card .p-datatable-tbody > tr > td { vertical-align: middle; }
+
+/* (opcional) un poco más de espacio entre las dos nuevas tarjetas y lo de arriba */
+.p-tabpanel .eq-card + .eq-card { margin-top: 1rem; }
