@@ -25,6 +25,9 @@ import { finalize } from 'rxjs/operators';
 /* Chart.js */
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+
+import { PqrsPivotRow, PqrsRespRow } from '@/modules/Services/dashboard-service';
+
 Chart.register(ChartDataLabels);
 /** -------- NPS Gauge plugin (aguja desde el centro, encima del texto) --------
  * En el chart usa:
@@ -280,6 +283,12 @@ export class Dashboard implements OnInit, AfterViewInit {
   pqrsCatTotalAll = 0;
   pqrsCatPadreTotalAll = 0;
 
+// Totales GLOBALS (no dependen de la página visible)
+pqrsPivotTotals = { total: 0, abiertos: 0, en_proceso: 0, escalados: 0, cerrados: 0 };
+pqrsRespTotals  = { total: 0, abiertos: 0, en_proceso: 0, escalados: 0, cerrados: 0, vencidos: 0, dentro_sla: 0 };
+
+
+
   // Tab activo (0..4)
   selectedTabIndex = 0;
 
@@ -317,6 +326,16 @@ export class Dashboard implements OnInit, AfterViewInit {
 
   pqrsTipoTot: { peticion: number; queja: number; reclamo: number; sugerencia: number; total: number } =
     { peticion: 0, queja: 0, reclamo: 0, sugerencia: 0, total: 0 };
+
+  // Filtros pivot y responsable
+  idAgenciaFilter: number | null = null;
+  idCanalFilter: number | null = null;
+  idTipoFilter: number | null = null;
+  idResponsableFilter: number | null = null;
+
+  pqrsPivotRows: PqrsPivotRow[] = [];
+  pqrsRespRows: PqrsRespRow[] = [];
+
 
 
 
@@ -418,6 +437,12 @@ export class Dashboard implements OnInit, AfterViewInit {
 
 
       if (this.selectedTabIndex === 3) this.loadSeries();
+
+      if (range && this.selectedTabIndex === 2) {
+        this.loadPqrsPivotAndResp();
+      }
+
+
     }
   }
 
@@ -447,8 +472,8 @@ export class Dashboard implements OnInit, AfterViewInit {
     this.pqrsEstadoOpts = this.makeBarNumberOptions('', 0);
     this.pqrsCat = res.pqrsPorCategoria || [];
     this.pqrsCatPadre = res.pqrsPorCategoriaPadre || [];
-    this.pqrsTipoTot = res.pqrsTipoTot || { peticion:0, queja:0, reclamo:0, sugerencia:0, total:0 };
-    
+    this.pqrsTipoTot = res.pqrsTipoTot || { peticion: 0, queja: 0, reclamo: 0, sugerencia: 0, total: 0 };
+
     // << NUEVO: totales globales para las tablas paginadas >>
     this.pqrsCatTotalAll = Array.isArray(this.pqrsCat)
       ? this.pqrsCat.reduce((a, r) => a + (Number(r?.total) || 0), 0)
@@ -1008,8 +1033,87 @@ export class Dashboard implements OnInit, AfterViewInit {
       default: return 'badge';
     }
   }
-
-
   // fin nuevo nps detalle
+
+
+  // ❌ private loadPqrsPivotAndResp() { ... }
+  // ✅
+
+  loadPqrsPivotAndResp(): void {
+  const inicio = this.startDate ? this.toYmd(this.startDate) : null;
+  const fin    = this.endDate   ? this.toYmd(this.endDate)   : null;
+  if (!inicio || !fin) return;
+
+  const range: [string, string] = [inicio, fin];
+
+  // Pivot Agencia × Canal × Tipo
+  this.dashboardService.getPqrsPivotAgenciaCanalTipo({
+    range,
+    idAgencia: this.idAgenciaFilter ?? null,
+    idCanal:   this.idCanalFilter   ?? null,
+    idTipo:    this.idTipoFilter    ?? null
+  }).subscribe((rows: PqrsPivotRow[]) => {
+    this.pqrsPivotRows   = rows ?? [];
+    this.pqrsPivotTotals = this.pqrsPivotRows.reduce((acc, r) => {
+      acc.total      += +r.total       || 0;
+      acc.abiertos   += +r.abiertos    || 0;
+      acc.en_proceso += +r.en_proceso  || 0;
+      acc.escalados  += +r.escalados   || 0;
+      acc.cerrados   += +r.cerrados    || 0;
+      return acc;
+    }, { total:0, abiertos:0, en_proceso:0, escalados:0, cerrados:0 });
+  });
+
+  // Por responsable (+ SLA)
+  this.dashboardService.getPqrsPorResponsable({
+    range,
+    idResponsable: this.idResponsableFilter ?? null,
+    idAgencia:     this.idAgenciaFilter     ?? null,
+    idCanal:       this.idCanalFilter       ?? null,
+    idTipo:        this.idTipoFilter        ?? null
+  }).subscribe((rows: PqrsRespRow[]) => {
+    this.pqrsRespRows   = rows ?? [];
+    this.pqrsRespTotals = this.pqrsRespRows.reduce((acc, r) => {
+      acc.total      += +r.total       || 0;
+      acc.abiertos   += +r.abiertos    || 0;
+      acc.en_proceso += +r.en_proceso  || 0;
+      acc.escalados  += +r.escalados   || 0;
+      acc.cerrados   += +r.cerrados    || 0;
+      acc.vencidos   += +r.vencidos    || 0;
+      acc.dentro_sla += +r.dentro_sla  || 0;
+      return acc;
+    }, { total:0, abiertos:0, en_proceso:0, escalados:0, cerrados:0, vencidos:0, dentro_sla:0 });
+  });
+}
+
+
+private computePivotTotals(rows: PqrsPivotRow[]) {
+  const acc = { total:0, abiertos:0, en_proceso:0, escalados:0, cerrados:0 };
+  for (const r of rows ?? []) {
+    acc.total       += +r.total       || 0;
+    acc.abiertos    += +r.abiertos    || 0;
+    acc.en_proceso  += +r.en_proceso  || 0;
+    acc.escalados   += +r.escalados   || 0;
+    acc.cerrados    += +r.cerrados    || 0;
+  }
+  this.pqrsPivotTotals = acc;
+}
+
+private computeRespTotals(rows: PqrsRespRow[]) {
+  const acc = { total:0, abiertos:0, en_proceso:0, escalados:0, cerrados:0, vencidos:0, dentro_sla:0 };
+  for (const r of rows ?? []) {
+    acc.total       += +r.total       || 0;
+    acc.abiertos    += +r.abiertos    || 0;
+    acc.en_proceso  += +r.en_proceso  || 0;
+    acc.escalados   += +r.escalados   || 0;
+    acc.cerrados    += +r.cerrados    || 0;
+    acc.vencidos    += +r.vencidos    || 0;
+    acc.dentro_sla  += +r.dentro_sla  || 0;
+  }
+  this.pqrsRespTotals = acc;
+}
+
+
+
 
 }

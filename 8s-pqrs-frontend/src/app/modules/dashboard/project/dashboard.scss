@@ -1154,3 +1154,34 @@
   }
   .muted { margin-top: .25rem; }
 }
+
+
+// pqrs x tipo y otros
+
+/* Fila de filtros compacta */
+.filter-row .p-inputtext {
+  min-width: 8rem;
+}
+
+/* Alinear números a la derecha en tablas “seg-table” */
+.seg-table .text-right {
+  text-align: right;
+}
+
+/* Tablas responsivas con números compactos */
+.seg-table td.num, .seg-table td.text-right {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cards de tablas con un poco de aire */
+.eq-card .p-table {
+  --row-gap: .25rem;
+}
+
+
+.p-table tfoot tr td {
+  background: var(--surface-50); /* o el color que uses para footers */
+  font-weight: 700;
+}
+.p-table .text-right { text-align: right; }
+

@@ -1,5 +1,7 @@
 // src/app/modules/Services/dashboard-service.ts
-import { Injectable } from '@angular/core';
+// import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+// import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin, map, catchError, of, Observable } from 'rxjs';
 import { ApiService } from './api-service';
 
@@ -42,10 +44,45 @@ export interface PqrsTipoTot {
   peticion: number; queja: number; reclamo: number; sugerencia: number; total: number;
 }
 
+export interface PqrsPivotRow {
+  idAgencia: number | null;
+  agencia: string | null;
+  idCanal: number | null;
+  canal: string | null;
+  idTipo: number | null;
+  tipo: string | null;
+  total: number;
+  abiertos: number;
+  en_proceso: number;
+  escalados: number;
+  cerrados: number;
+}
+
+export interface PqrsRespRow {
+  idResponsable: number | null;
+  responsable: string;
+  idAgencia: number | null;
+  agencia: string | null;
+  idCanal: number | null;
+  canal: string | null;
+  idTipo: number | null;
+  tipo: string | null;
+  total: number;
+  abiertos: number;
+  en_proceso: number;
+  escalados: number;
+  cerrados: number;
+  vencidos: number;
+  dentro_sla: number;
+}
+
 
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
+
+    // private http = inject(HttpClient);
+
   /** Nota: `this.base` ya incluye "?op=" para que agreguemos al final el nombre del op */
   private base = `/controllers/dashboard.controller.php?op=`;
 
@@ -184,6 +221,37 @@ private pqrsTipoTotales(p: any) {
     );
   }
 
+// pqrs x tipo y otros 
+// PIVOT Agencia × Canal × Tipo (estados)
+getPqrsPivotAgenciaCanalTipo(params: {
+  range: [string, string],
+  idAgencia?: number | null,
+  idCanal?: number | null,
+  idTipo?: number | null
+}) {
+  const { range, idAgencia, idCanal, idTipo } = params;
+  return this.api.get(
+    `${this.base}pqrs_pivot_agencia_canal_tipo`,
+    this.buildParams({ range, idAgencia, idCanal, idTipo })
+  ) as Observable<PqrsPivotRow[]>;
+}
+
+// Tablero por responsable (estados + SLA)
+getPqrsPorResponsable(params: {
+  range: [string, string],
+  idResponsable?: number | null,
+  idAgencia?: number | null,
+  idCanal?: number | null,
+  idTipo?: number | null
+}) {
+  const { range, idResponsable, idAgencia, idCanal, idTipo } = params;
+  return this.api.get(
+    `${this.base}pqrs_por_responsable`,
+    this.buildParams({ range, idResponsable, idAgencia, idCanal, idTipo })
+  ) as Observable<PqrsRespRow[]>;
+}
+
+  
   /* ========= métodos públicos extra (por si los llamas luego) ========= */
 
   // getEncuestasTasa(args: { range: string | [string, string] | string[] }) {

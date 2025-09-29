@@ -350,19 +350,19 @@
             <div class="kpi-grid-2rows">
               <!-- Total PQRs (ocupa 2 filas) -->
 
-<p-card class="eq-card kpi-card kpi-center kpi-total">
-  <ng-template pTemplate="header">
-    <div class="kpi-header">
-      <i class="pi pi-inbox kpi-icon kpi-purple"></i>
-      <span>Total PQRs</span>
-    </div>
-  </ng-template>
+              <p-card class="eq-card kpi-card kpi-center kpi-total">
+                <ng-template pTemplate="header">
+                  <div class="kpi-header">
+                    <i class="pi pi-inbox kpi-icon kpi-purple"></i>
+                    <span>Total PQRs</span>
+                  </div>
+                </ng-template>
 
-  <div class="kpi-center-box">
-    <div class="kpi">{{ pqrsResumen?.total ?? overview?.total_pqrs?.value ?? 0 }}</div>
-    <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
-  </div>
-</p-card>
+                <div class="kpi-center-box">
+                  <div class="kpi">{{ pqrsResumen?.total ?? overview?.total_pqrs?.value ?? 0 }}</div>
+                  <div class="muted">Δ {{ overview?.total_pqrs?.delta_pct_vs_prev ?? 0 }}%</div>
+                </div>
+              </p-card>
 
 
 
@@ -452,7 +452,130 @@
           </div>
 
           <!-- <p-divider class="col-12" type="solid"></p-divider> -->
+           
+          <p-divider class="col-12" type="solid"></p-divider>
 
+
+<!-- ====== 3ª fila: Pivot Agencia × Canal × Tipo ====== -->
+<div class="col-12">
+  <p-card header="PQRs por Agencia × Canal × Tipo (por estado)" class="eq-card">
+    <div class="filter-row mb-3 flex gap-2 flex-wrap">
+      <input type="number" class="p-inputtext p-component w-10rem" placeholder="idAgencia"
+             [(ngModel)]="idAgenciaFilter">
+      <input type="number" class="p-inputtext p-component w-10rem" placeholder="idCanal"
+             [(ngModel)]="idCanalFilter">
+      <input type="number" class="p-inputtext p-component w-10rem" placeholder="idTipo"
+             [(ngModel)]="idTipoFilter">
+      <button pButton type="button" label="Aplicar" icon="pi pi-filter" (click)="loadPqrsPivotAndResp()"></button>
+    </div>
+
+    <p-table [value]="pqrsPivotRows" responsiveLayout="scroll" [paginator]="true" [rows]="10" class="seg-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Agencia</th>
+          <th>Canal</th>
+          <th>Tipo</th>
+          <th class="text-right">Total</th>
+          <th class="text-right">Abiertos</th>
+          <th class="text-right">En proceso</th>
+          <th class="text-right">Escalados</th>
+          <th class="text-right">Cerrados</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>{{ r.agencia }}</td>
+          <td>{{ r.canal }}</td>
+          <td>{{ r.tipo }}</td>
+          <td class="text-right">{{ r.total }}</td>
+          <td class="text-right">{{ r.abiertos }}</td>
+          <td class="text-right">{{ r.en_proceso }}</td>
+          <td class="text-right">{{ r.escalados }}</td>
+          <td class="text-right">{{ r.cerrados }}</td>
+        </tr>
+      </ng-template>
+<ng-template pTemplate="footer">
+  <tr>
+    <td colspan="3" class="text-right"><strong>Totales</strong></td>
+    <td class="text-right"><strong>{{ pqrsPivotTotals.total }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsPivotTotals.abiertos }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsPivotTotals.en_proceso }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsPivotTotals.escalados }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsPivotTotals.cerrados }}</strong></td>
+  </tr>
+</ng-template>
+
+
+      
+    </p-table>
+  </p-card>
+</div>
+
+      <p-divider class="col-12" type="solid"></p-divider>
+<!-- ====== 4ª fila: Responsable (estados + SLA) ====== -->
+<div class="col-12">
+  <p-card header="PQRs por Responsable (estados + SLA)" class="eq-card">
+    <div class="filter-row mb-3 flex gap-2 flex-wrap">
+      <input type="number" class="p-inputtext p-component w-12rem" placeholder="idResponsable"
+             [(ngModel)]="idResponsableFilter">
+      <input type="number" class="p-inputtext p-component w-10rem" placeholder="idAgencia"
+             [(ngModel)]="idAgenciaFilter">
+      <input type="number" class="p-inputtext p-component w-10rem" placeholder="idCanal"
+             [(ngModel)]="idCanalFilter">
+      <input type="number" class="p-inputtext p-component w-10rem" placeholder="idTipo"
+             [(ngModel)]="idTipoFilter">
+      <button pButton type="button" label="Aplicar" icon="pi pi-filter" (click)="loadPqrsPivotAndResp()"></button>
+    </div>
+
+    <p-table [value]="pqrsRespRows" responsiveLayout="scroll" [paginator]="true" [rows]="10" class="seg-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Responsable</th>
+          <th>Agencia</th>
+          <th>Canal</th>
+          <th>Tipo</th>
+          <th class="text-right">Total</th>
+          <th class="text-right">Abiertos</th>
+          <th class="text-right">En proceso</th>
+          <th class="text-right">Escalados</th>
+          <th class="text-right">Cerrados</th>
+          <th class="text-right">Vencidos (SLA)</th>
+          <th class="text-right">Dentro SLA</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>{{ r.responsable }}</td>
+          <td>{{ r.agencia }}</td>
+          <td>{{ r.canal }}</td>
+          <td>{{ r.tipo }}</td>
+          <td class="text-right">{{ r.total }}</td>
+          <td class="text-right">{{ r.abiertos }}</td>
+          <td class="text-right">{{ r.en_proceso }}</td>
+          <td class="text-right">{{ r.escalados }}</td>
+          <td class="text-right">{{ r.cerrados }}</td>
+          <td class="text-right">{{ r.vencidos }}</td>
+          <td class="text-right">{{ r.dentro_sla }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="footer">
+  <tr>
+    <!-- Ajusta el colspan para cubrir las columnas de identificación: responsable/agencia/canal/tipo -->
+    <td colspan="4" class="text-right"><strong>Totales</strong></td>
+    <td class="text-right"><strong>{{ pqrsRespTotals.total }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsRespTotals.abiertos }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsRespTotals.en_proceso }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsRespTotals.escalados }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsRespTotals.cerrados }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsRespTotals.vencidos }}</strong></td>
+    <td class="text-right"><strong>{{ pqrsRespTotals.dentro_sla }}</strong></td>
+  </tr>
+</ng-template>
+
+    </p-table>
+  </p-card>
+</div>
 
 
           <p-divider class="col-12" type="solid"></p-divider>

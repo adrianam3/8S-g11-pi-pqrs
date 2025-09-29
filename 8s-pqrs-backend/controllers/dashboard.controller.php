@@ -557,6 +557,128 @@ else if ($op === 'pqrs_tipo_totales') {
   exit;
 }
 
+/* ===============================
+   PQRs: Pivot Agencia × Canal × Tipo (columnas por estado)
+   ?op=pqrs_pivot_agencia_canal_tipo&fechaInicio=YYYY-MM-DD&fechaFin=YYYY-MM-DD[&idAgencia=..&idCanal=..&idTipo=..]
+   =============================== */
+else if ($op === 'pqrs_pivot_agencia_canal_tipo') {
+  fechas($ini,$fin);
+
+  // Filtros opcionales
+  $idAgencia = param('idAgencia', null);
+  $idCanal   = param('idCanal',   null);
+  $idTipo    = param('idTipo',    null);
+
+  $sql = "
+    SELECT
+      ag.idAgencia,
+      UPPER(COALESCE(ag.nombre,'(SIN AGENCIA)')) AS agencia,
+      c.idCanal,
+      COALESCE(c.nombre,'(SIN CANAL)')           AS canal,
+      t.idTipo,
+      UPPER(COALESCE(t.nombre,'(SIN TIPO)'))     AS tipo,
+
+      COUNT(*) AS total,
+
+      SUM(CASE WHEN UPPER(e.nombre) IN ('ABIERTO','PENDIENTE') THEN 1 ELSE 0 END) AS abiertos,
+      SUM(CASE WHEN UPPER(e.nombre) LIKE 'EN PROCESO%' THEN 1 ELSE 0 END)         AS en_proceso,
+      SUM(CASE WHEN UPPER(e.nombre) LIKE 'ESCAL%' THEN 1 ELSE 0 END)              AS escalados,
+      SUM(CASE WHEN UPPER(e.nombre) IN ('CERRADO','RESUELTO') THEN 1 ELSE 0 END)  AS cerrados
+    FROM pqrs p
+    JOIN estadospqrs e ON e.idEstado = p.idEstado
+    LEFT JOIN agencias  ag ON ag.idAgencia = p.idAgencia
+    LEFT JOIN canales   c  ON c.idCanal    = p.idCanal
+    LEFT JOIN tipospqrs t  ON t.idTipo     = p.idTipo
+    WHERE DATE(p.fechaCreacion) BETWEEN ? AND ?
+  ";
+
+  $types = "ss";
+  $vals  = [$ini,$fin];
+
+  if ($idAgencia !== null && $idAgencia !== '') { $sql .= " AND p.idAgencia = ?"; $types .= "i"; $vals[] = (int)$idAgencia; }
+  if ($idCanal   !== null && $idCanal   !== '') { $sql .= " AND p.idCanal   = ?"; $types .= "i"; $vals[] = (int)$idCanal; }
+  if ($idTipo    !== null && $idTipo    !== '') { $sql .= " AND p.idTipo    = ?"; $types .= "i"; $vals[] = (int)$idTipo; }
+
+  $sql .= "
+    GROUP BY ag.idAgencia, ag.nombre, c.idCanal, c.nombre, t.idTipo, t.nombre
+    ORDER BY ag.nombre, c.nombre, t.nombre
+  ";
+
+  $res = prep($con,$sql,$types,$vals)->get_result()->fetch_all(MYSQLI_ASSOC);
+  echo json_encode($res);
+  exit;
+}
+
+/* ===============================
+   PQRs: Tablero por Responsable (con columnas por estado + SLA)
+   ?op=pqrs_por_responsable&fechaInicio=YYYY-MM-DD&fechaFin=YYYY-MM-DD[&idResponsable=..&idAgencia=..&idCanal=..&idTipo=..]
+   =============================== */
+else if ($op === 'pqrs_por_responsable') {
+  fechas($ini,$fin);
+
+  $idResp   = param('idResponsable', null);
+  $idAgencia= param('idAgencia', null);
+  $idCanal  = param('idCanal',   null);
+  $idTipo   = param('idTipo',    null);
+
+  $sql = "
+    SELECT
+      pr.idResponsable,
+      UPPER(COALESCE(CONCAT(TRIM(pe.nombres),' ',TRIM(pe.apellidos)),'(SIN RESPONSABLE)')) AS responsable,
+
+      ag.idAgencia,
+      UPPER(COALESCE(ag.nombre,'(SIN AGENCIA)')) AS agencia,
+      c.idCanal,
+      COALESCE(c.nombre,'(SIN CANAL)')           AS canal,
+      t.idTipo,
+      UPPER(COALESCE(t.nombre,'(SIN TIPO)'))     AS tipo,
+
+      COUNT(*) AS total,
+
+      SUM(CASE WHEN UPPER(e.nombre) IN ('ABIERTO','PENDIENTE') THEN 1 ELSE 0 END) AS abiertos,
+      SUM(CASE WHEN UPPER(e.nombre) LIKE 'EN PROCESO%' THEN 1 ELSE 0 END)         AS en_proceso,
+      SUM(CASE WHEN UPPER(e.nombre) LIKE 'ESCAL%'      THEN 1 ELSE 0 END)         AS escalados,
+      SUM(CASE WHEN UPPER(e.nombre) IN ('CERRADO','RESUELTO') THEN 1 ELSE 0 END)  AS cerrados,
+
+      SUM(CASE WHEN UPPER(e.nombre) NOT IN ('CERRADO','RESUELTO')
+                AND p.fechaLimiteNivel IS NOT NULL
+                AND NOW() >  p.fechaLimiteNivel THEN 1 ELSE 0 END) AS vencidos,
+      SUM(CASE WHEN UPPER(e.nombre) NOT IN ('CERRADO','RESUELTO')
+                AND p.fechaLimiteNivel IS NOT NULL
+                AND NOW() <= p.fechaLimiteNivel THEN 1 ELSE 0 END) AS dentro_sla
+    FROM pqrs p
+    JOIN estadospqrs e        ON e.idEstado = p.idEstado
+    JOIN pqrs_responsables pr ON pr.idPqrs  = p.idPqrs AND pr.nivel = p.nivelActual
+    LEFT JOIN usuarios u      ON u.idUsuario = pr.idResponsable
+    LEFT JOIN personas pe     ON pe.idPersona = u.idPersona
+    LEFT JOIN agencias ag     ON ag.idAgencia = p.idAgencia
+    LEFT JOIN canales  c      ON c.idCanal    = p.idCanal
+    LEFT JOIN tipospqrs t     ON t.idTipo     = p.idTipo
+    WHERE DATE(p.fechaCreacion) BETWEEN ? AND ?
+  ";
+
+  $types = "ss";
+  $vals  = [$ini,$fin];
+
+  if ($idResp   !== null && $idResp   !== '') { $sql .= " AND pr.idResponsable = ?"; $types.="i"; $vals[]=(int)$idResp; }
+  if ($idAgencia!== null && $idAgencia!=='') { $sql .= " AND p.idAgencia     = ?"; $types.="i"; $vals[]=(int)$idAgencia; }
+  if ($idCanal  !== null && $idCanal  !== '') { $sql .= " AND p.idCanal       = ?"; $types.="i"; $vals[]=(int)$idCanal; }
+  if ($idTipo   !== null && $idTipo   !== '') { $sql .= " AND p.idTipo        = ?"; $types.="i"; $vals[]=(int)$idTipo; }
+
+  $sql .= "
+    GROUP BY
+      pr.idResponsable, responsable,
+      ag.idAgencia, ag.nombre,
+      c.idCanal, c.nombre,
+      t.idTipo, t.nombre
+    ORDER BY responsable, agencia, canal, tipo
+  ";
+
+  $res = prep($con,$sql,$types,$vals)->get_result()->fetch_all(MYSQLI_ASSOC);
+  echo json_encode($res);
+  exit;
+}
+
 
 
   // Resumen de encuestas
