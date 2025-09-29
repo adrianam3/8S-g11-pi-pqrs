@@ -188,6 +188,23 @@ switch ($op) {
         break;
     }
 
+
+case 'desactivar': {
+    $idPersona = filter_var(param('idPersona', null), FILTER_VALIDATE_INT);
+    if (!$idPersona) { wrap_error('Parámetro idPersona inválido', 400); break; }
+    $uno = $personas->uno($idPersona);
+    if (!$uno) { wrap_error('Persona no encontrada', 404); break; }
+    $res = $personas->actualizar($idPersona, $uno['cedula'], $uno['nombres'], $uno['apellidos'],
+                                 $uno['direccion'], $uno['telefono'], $uno['extension'],
+                                 $uno['celular'], $uno['email'], 0);
+    if (is_string($res)) { wrap_error('No se pudo desactivar la persona', 500, $res); break; }
+    wrap_ok('Persona desactivada', ['affected'=>(int)$res]);
+    break;
+}
+
+
+
+
     default:
         wrap_error('Operación no soportada. Usa op=todos|todossinusuario|todosByRol|uno|insertar|actualizar|eliminar|actualizar_perfil', 400);
         break;

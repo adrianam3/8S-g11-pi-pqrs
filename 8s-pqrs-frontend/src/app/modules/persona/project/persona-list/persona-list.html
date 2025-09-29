@@ -1,1 +1,126 @@
+<div class="surface-card p-3 border-round">
+  <div class="flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0"><i class="pi pi-users mr-2"></i> PERSONAS</h3>
+
+    <div class="flex align-items-center gap-2">
+      <span class="p-input-icon-left">
+        <i class="pi pi-search"></i>
+        <input pInputText type="text" [(ngModel)]="globalFilter" placeholder="Buscar" style="width: 16rem">
+      </span>
+
+      <button pButton label="Nueva Persona" icon="pi pi-plus"
+              class="p-button-success" (click)="openNew()"></button>
+    </div>
+  </div>
+
+  <p-table
+    [value]="personasAll"
+    [loading]="loading"
+    dataKey="idPersona"
+    [paginator]="true"
+    [rows]="10"
+    [globalFilterFields]="['documento','nombres','apellidos','email','celular','estado']"
+    [filters]="{ 'global': { value: globalFilter, matchMode: 'contains' } }"
+    responsiveLayout="scroll">
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="min-width: 10rem">Documento</th>
+        <th style="min-width: 14rem">Nombres</th>
+        <th style="min-width: 14rem">Apellidos</th>
+        <th style="min-width: 18rem">E-mail</th>
+        <th style="min-width: 10rem">Celular</th>
+        <th style="min-width: 11rem">Fecha Creación</th>
+        <th style="min-width: 8rem">Estado</th>
+        <th style="width: 7rem" class="text-center">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-r>
+      <tr>
+        <td>{{ r.documento || '-' }}</td>
+        <td>{{ r.nombres }}</td>
+        <td>{{ r.apellidos }}</td>
+        <td>{{ r.email || '-' }}</td>
+        <td>{{ r.celular || '-' }}</td>
+        <td>{{ r.fechaCreacion || '-' }}</td>
+        <td>{{ getEstadoTexto(r.estado) }}</td>
+        <!-- <td>
+          <p-tag [severity]="estadoSeverity(r.estado)" [value]="r.estado || '-'"></p-tag>
+        </td> -->
+        <td class="text-center">
+          <button pButton type="button" icon="pi pi-pencil"
+                  class="p-button-rounded p-button-sm p-button-success mr-2"
+                  pTooltip="Editar" tooltipPosition="top"
+                  (click)="openEdit(r)">
+          </button>
+
+          <button pButton type="button" icon="pi pi-trash"
+                  class="p-button-rounded p-button-sm p-button-danger"
+                  pTooltip="Desactivar" tooltipPosition="top"
+                  (click)="askDelete(r)">
+          </button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8" class="text-center">Sin registros</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<!-- ===== Diálogo alta/edición ===== -->
+<p-dialog [(visible)]="showDialog" [modal]="true" [style]="{width:'520px'}" [draggable]="false" [resizable]="false">
+  <ng-template pTemplate="header">
+    <div class="flex align-items-center">
+      <i class="pi pi-user-edit mr-2"></i>
+      <span class="font-semibold">{{ dialogTitle }}</span>
+    </div>
+  </ng-template>
+
+  <div class="grid formgrid">
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Documento</label>
+      <input pInputText type="text" [(ngModel)]="form.documento" placeholder="Cédula/RUC/DNI">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Celular</label>
+      <input pInputText type="text" [(ngModel)]="form.celular" placeholder="09xxxxxxxx">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Nombres *</label>
+      <input pInputText type="text" [(ngModel)]="form.nombres" required>
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Apellidos *</label>
+      <input pInputText type="text" [(ngModel)]="form.apellidos" required>
+    </div>
+
+    <div class="col-12">
+      <label class="block mb-2">E-mail</label>
+      <input pInputText type="email" [(ngModel)]="form.email" placeholder="correo@dominio.com">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="block mb-2">Estado</label>
+      <select class="p-inputtext p-component w-full" [(ngModel)]="form.estado">
+        <option value="Activo">Activo</option>
+        <option value="Inactivo">Inactivo</option>
+      </select>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancelar" class="p-button-text" (click)="showDialog=false"></button>
+    <button pButton label="Guardar" icon="pi pi-check" (click)="save()"></button>
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>
 <p>persona-list works!</p>

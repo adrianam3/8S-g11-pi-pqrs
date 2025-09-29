@@ -44,7 +44,7 @@ export class UsuarioList {
     public usuarios: any;
     public showSearch: boolean = false;
     public usuariosAll: any = [];
-    private usuarioApi = `controllers/usuario.controller.php?op=todos`;
+    private usuarioApi = `controllers/usuarios.controller.php?op=todos`;
     public loading: boolean = false;
 
     constructor(
@@ -91,12 +91,12 @@ export class UsuarioList {
                 idUsuario: u.idUsuario,
                 nombreCompleto: `${u.personaNombres} ${u.personaApellidos}`,
                 descRol: u.rolNombre,
-                descArea: u.areaNombre,
+                agenciaNombre: u.agenciaNombre,
                 email: u.personaEmail,
                 fechaCreacion: u.fechaCreacion,
                 usuario: u.usuario,
                 idRol: u.idRol,
-                descEstado: u.estado === '1' ? 'Activo' : 'Inactivo'
+                descEstado: u.estado === 1 ? 'Activo' : 'Inactivo'
             }));
 
             console.log(this.usuariosAll)

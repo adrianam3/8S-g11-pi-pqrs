@@ -2,7 +2,7 @@
 //TODO: Clase de Rol
 require_once('../config/config.php');
 
-class Rol
+class Roles
 {
     //TODO: Implementar los métodos de la clase
 

@@ -8,10 +8,10 @@ if ($method == "OPTIONS") {
     die();
 }
 //TODO: Controlador de rol
-require_once('revisarsesion.controller.php');
-require_once('../models/rol.model.php');
+// require_once('revisarsesion.controller.php');
+require_once('../models/roles.model.php');
 error_reporting(0); //DESHABILITAR ERROR, DEJAR COMENTADO si se desea que se muestre el error
-$rol = new Rol;
+$rol = new Roles;
 
 switch ($_GET["op"]) {
     //TODO: Operaciones de rol

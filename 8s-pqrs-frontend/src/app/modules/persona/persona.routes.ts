@@ -10,8 +10,11 @@ export const personaRoutes: Routes = [
                 pathMatch: 'full',
                 loadComponent: () =>
                     import('./project/persona-list/persona-list').then((m) => m.PersonaList),
+
             },
            
         ]
     }
 ];
+
+

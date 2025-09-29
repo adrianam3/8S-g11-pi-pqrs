@@ -54,17 +54,17 @@ class Usuario
             $con = new ClaseConectar();
             $con = $con->ProcedimientoParaConectar();
     
-            $cadena = "SELECT usuario.*, 
-                              persona.nombres AS personaNombres, 
-                              persona.apellidos AS personaApellidos, 
-                              CONCAT(persona.nombres, ' ', persona.apellidos) AS agenteNombreCompleto,
-                              persona.email AS personaEmail, 
-                              rol.nombreRol AS rolNombre,
-                              areaUsuario.nombre AS areaNombre
-                       FROM usuario
-                       LEFT JOIN persona ON usuario.idPersona = persona.idPersona
-                       LEFT JOIN rol ON usuario.idRol = rol.idRol
-                       LEFT JOIN areaUsuario ON usuario.idAreaU = areaUsuario.idAreaU";
+            $cadena = "SELECT usuarios.*, 
+                              personas.nombres AS personaNombres, 
+                              personas.apellidos AS personaApellidos, 
+                              CONCAT(personas.nombres, ' ', personas.apellidos) AS usuarioNombreCompleto,
+                              personas.email AS personaEmail, 
+                              roles.nombreRol AS rolNombre,
+                              agencias.nombre AS agenciaNombre
+                       FROM usuarios
+                       LEFT JOIN personas ON usuarios.idPersona = personas.idPersona
+                       LEFT JOIN roles ON usuarios.idRol = roles.idRol
+                       LEFT JOIN agencias ON usuarios.idAgencia = agencias.idAgencia";
     
             // Preparar la consulta
             $stmt = mysqli_prepare($con, $cadena);

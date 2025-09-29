@@ -57,14 +57,15 @@ export class RolList implements OnInit {
         this.loading = true;
 
         try {
-            const rolesObs = await this.apiService.get<any[]>('controllers/rol.controller.php?op=todos');
+            const rolesObs = await this.apiService.get<any[]>('controllers/roles.controller.php?op=todos');
             const data = await lastValueFrom(rolesObs);
+            
 
             this.rolesAll = data.map(r => ({
                 idRol: r.idRol,
-                nombre: r.nombre,
+                nombre: r.nombreRol,
                 descripcion: r.descripcion,
-                estado: r.estado,
+                estado: r.estado === '1' ? 'Activo' : 'Inactivo',
                 fechaCreacion: r.fechaCreacion,
                 fechaActualizacion: r.fechaActualizacion
             }));
