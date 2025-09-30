@@ -6,93 +6,206 @@
 </div>
 
 <div class="card card-w-title">
-    <p-table #dt [value]="pqrs" [paginator]="true" [rows]="10" [showCurrentPageReport]="true"
-        currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros."
-        [globalFilterFields]="['codigo', 'asunto', 'detalle', 'nombreCliente', 'nombreEstado', 'nombreTipo']"
-        [rowHover]="true" [showGridlines]="true" [loading]="loading" [tableStyle]="{ 'min-width': '120rem' }">
+    <p-table #dt [value]="pqrs" dataKey="idPqrs" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10,20,50]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Mostrando de {first} a {last} de {totalRecords} registros." [rowHover]="true"
+        [stripedRows]="true" [showGridlines]="true" [loading]="loading" [tableStyle]="{ 'min-width': '120rem' }"
+        [globalFilterFields]="['codigo','asunto','detalle','nombreCliente','nombreEstado','nombreTipo']">
         <ng-template #caption>
-            <div class="flex justify-content-between flex-column sm:flex-row">
-                <button pButton label="Borrar Filtros" class="p-button-outlined mb-2" icon="pi pi-filter-slash"
-                    (click)="clearFilters(dt)"></button>
-                <p-iconfield iconPosition="left" class="ml-auto">
-                    <p-inputicon>
-                        <i class="pi pi-search"></i>
-                    </p-inputicon>
-                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar..." />
-                </p-iconfield>
+            <div class="flex flex-column sm:flex-row gap-3 align-items-start sm:align-items-center">
+                <button pButton label="Borrar Filtros" class="p-button-outlined" icon="pi pi-filter-slash"
+                    (click)="clearFilters(dt)">
+                </button>
+
+                <div class="ml-auto w-full sm:w-auto">
+                    <p-iconfield iconPosition="left" class="w-full">
+                        <p-inputicon>
+                            <i class="pi pi-search"></i>
+                        </p-inputicon>
+                        <input pInputText type="text" (input)="onGlobalFilter(dt, $event)"
+                            placeholder="Buscar en todo..." class="w-full" />
+                    </p-iconfield>
+                </div>
             </div>
         </ng-template>
 
+        <!-- cabecera con filtros -->
         <ng-template pTemplate="header">
             <tr>
-                <th>ID</th>
-                <th>Código</th>
-                <th>Asunto</th>
-                <th>Detalle</th>
-                <th>Tipo</th>
-                <th>Categoría</th>
-                <th>Canal</th>
-                <th>Estado</th>
-                <th>Agencia</th>
-                <th>Cliente</th>
+                <th style="width: 4rem"></th>
+                <th style="width: 4rem" *ngIf="idRol !== 1"></th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>ID</span>
+                        <p-columnFilter field="idPqrs" display="menu" type="numeric"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Código</span>
+                        <p-columnFilter field="codigo" display="menu" type="text"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Asunto</span>
+                        <p-columnFilter field="asunto" display="menu" type="text"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Detalle</span>
+                        <p-columnFilter field="detalle" display="menu" type="text"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Tipo</span>
+                        <p-columnFilter field="nombreTipo" display="menu" [showOperator]="false" matchMode="equals">
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <p-select [options]="tiposPqrsOptions" optionLabel="label" optionValue="value"
+                                    [showClear]="true" placeholder="Filtrar..." [ngModel]="value"
+                                    (onChange)="filter($event.value)">
+                                </p-select>
+                            </ng-template>
+                        </p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Categoría</span>
+                        <p-columnFilter field="nombreCategoria" display="menu" type="text"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Canal</span>
+                        <p-columnFilter field="nombreCanal" display="menu" type="text"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Estado</span>
+                        <p-columnFilter field="nombreEstado" display="menu" [showOperator]="false" matchMode="equals">
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <p-select [options]="estadosOptions" optionLabel="label" optionValue="value"
+                                    [showClear]="true" placeholder="Filtrar..." [ngModel]="value"
+                                    (onChange)="filter($event.value)" class="w-full">
+                                </p-select>
+                            </ng-template>
+                        </p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Agencia</span>
+                        <p-columnFilter field="nombreAgencia" display="menu" type="text"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Cliente</span>
+                        <p-columnFilter field="nombreCliente" display="menu" type="text"></p-columnFilter>
+                    </div>
+                </th>
                 <th>Email</th>
                 <th>Encuesta</th>
                 <th>Atención</th>
                 <th>Nivel</th>
-                <th>F. Límite</th>
-                <th>F. Cierre</th>
-                <th>Registro</th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>F. Límite</span>
+                        <p-columnFilter field="fechaLimiteNivel" display="menu" type="date"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>F. Cierre</span>
+                        <p-columnFilter field="fechaCierre" display="menu" type="date"></p-columnFilter>
+                    </div>
+                </th>
+                <th>
+                    <div class="flex align-items-center justify-content-between">
+                        <span>Registro</span>
+                        <p-columnFilter field="estadoRegistro" display="menu" [showOperator]="false" matchMode="equals">
+                            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                <p-select [options]="estadoRegistroOptions" optionLabel="label" optionValue="value"
+                                    [showClear]="true" placeholder="Filtrar..." [ngModel]="value"
+                                    (onChange)="filter($event.value)" class="w-full">
+                                </p-select>
+                            </ng-template>
+                        </p-columnFilter>
+                    </div>
+                </th>
                 <th>F. Creación</th>
                 <th>F. Actualización</th>
-                <th>Acciones</th>
             </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-rowData>
+        <!-- filas -->
+        <ng-template pTemplate="body" let-row>
             <tr>
-                <td>{{ rowData.idPqrs }}</td>
-                <td>{{ rowData.codigo }}</td>
-                <td>{{ rowData.asunto }}</td>
+                <!-- botón de seguimientos -->
                 <td>
-                    <div style="max-width: 250px; overflow: auto;">{{ rowData.detalle }}</div>
+                    <button pButton icon="pi pi-eye" [rounded]="true" [text]="true" pTooltip="Ver seguimientos"
+                        severity="info" (click)="verSeguimientos(row)">
+                    </button>
                 </td>
-                <td>{{ rowData.nombreTipo }}</td>
-                <td>{{ rowData.nombreCategoria }}</td>
-                <td>{{ rowData.nombreCanal }}</td>
+                <td *ngIf="idRol !== 1">
+                    <button pButton icon="pi pi-play-circle" [rounded]="true" [text]="true"
+                        pTooltip="Iniciar seguimiento" (click)="confirmarInicioSegimiento(row)"
+                        [disabled]="!puedeIniciar(row)">
+                    </button>
+                </td>
+
+                <td>{{ row.idPqrs }}</td>
+                <td>{{ row.codigo }}</td>
+                <td>{{ row.asunto }}</td>
+
+                <!-- detalle con scroll -->
                 <td>
-                    <span [ngClass]="{
-          'text-blue-600 font-bold': rowData.nombreEstado === 'ABIERTO',
-          'text-orange-600 font-bold': rowData.nombreEstado === 'EN PROGRESO',
-          'text-green-600 font-bold': rowData.nombreEstado === 'CERRADO'
-        }">
-                        {{ rowData.nombreEstado }}
-                    </span>
+                    <div class="detalle-cell">
+                        {{ row.detalle }}
+                    </div>
                 </td>
-                <td>{{ rowData.nombreAgencia }}</td>
-                <td>{{ rowData.nombreCliente }}</td>
-                <td>{{ rowData.emailCliente }}</td>
-                <td>{{ rowData.nombreEncuesta }}</td>
-                <td>{{ rowData.idAtencion }}</td>
-                <td>{{ rowData.nivelActual }}</td>
-                <td>{{ rowData.fechaLimiteNivel }}</td>
-                <td>{{ rowData.fechaCierre || '-' }}</td>
+
+                <td>{{ row.nombreTipo }}</td>
+                <td>{{ row.nombreCategoria }}</td>
+                <td>{{ row.nombreCanal }}</td>
+
                 <td>
-                    <span [ngClass]="{
-          'text-green-500': rowData.estadoRegistro == 1,
-          'text-red-500': rowData.estadoRegistro == 0
-        }">
-                        {{ rowData.estadoRegistro == 1 ? 'Activo' : 'Inactivo' }}
-                    </span>
+                    <p-tag [value]="row.nombreEstado || '-'" [severity]="
+            (row.nombreEstado || '').toLowerCase().includes('abiert') ? 'warning' :
+            (row.nombreEstado || '').toLowerCase().includes('progres') ? 'info' :
+            (row.nombreEstado || '').toLowerCase().includes('cerr') ? 'success' : 'secondary'
+          ">
+                    </p-tag>
                 </td>
-                <td>{{ rowData.fechaCreacion }}</td>
-                <td>{{ rowData.fechaActualizacion }}</td>
+
+                <td>{{ row.nombreAgencia }}</td>
+                <td>{{ row.nombreCliente }}</td>
                 <td>
-                    <button pButton icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
-                        severity="success" (click)="editarPqrs(rowData)" pTooltip="Editar"></button>
-                    <button pButton icon="pi pi-trash" [rounded]="true" [outlined]="true" severity="danger"
-                        (click)="confirmarEliminar(rowData)" pTooltip="Eliminar"></button>
+                    <a *ngIf="row.emailCliente" [href]="'mailto:' + row.emailCliente">{{ row.emailCliente }}</a>
+                    <span *ngIf="!row.emailCliente">-</span>
                 </td>
+                <td>{{ row.nombreEncuesta }}</td>
+                <td>{{ row.idAtencion }}</td>
+                <td>{{ row.nivelActual }}</td>
+                <td>{{ row.fechaLimiteNivel | date:'yyyy-MM-dd' }}</td>
+                <td>{{ row.fechaCierre ? (row.fechaCierre | date:'yyyy-MM-dd') : '-' }}</td>
+
+                <td>
+                    <p-tag [value]="row.estadoRegistro == 1 ? 'Activo' : 'Inactivo'"
+                        [severity]="row.estadoRegistro == 1 ? 'success' : 'danger'">
+                    </p-tag>
+                </td>
+
+                <td>{{ row.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</td>
+                <td>{{ row.fechaActualizacion | date:'yyyy-MM-dd HH:mm' }}</td>
             </tr>
         </ng-template>
     </p-table>
+
 </div>
+
+<p-confirmDialog></p-confirmDialog>

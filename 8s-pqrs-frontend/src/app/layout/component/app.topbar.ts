@@ -145,7 +145,7 @@ export class AppTopbar {
     }
 
     logout() {
-        this.layoutService.logout();
+        this.layoutService.logout2();
     }
 
     getDatos() {

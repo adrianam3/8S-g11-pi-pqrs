@@ -193,4 +193,14 @@ export class LayoutService {
                 console.error('Error durante el logout', error);
             });
     }
+
+    logout2() {
+        this.apiService.showToast('success', 'Adios', 'Ha cerrado sesión');
+        localStorage.clear();
+
+        const delayMs = 1000; // 1.5s de espera 
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, delayMs);
+    }
 }

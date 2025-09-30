@@ -141,15 +141,34 @@ switch ($op) {
         break;
 
     // === OBTENER UNO
+   
     case 'uno':
-        $id = filter_var(param('idPqrs', null), FILTER_VALIDATE_INT);
-        if (!$id) { http_response_code(400); echo json_encode(["message"=>"Parámetro idPqrs inválido"]); break; }
-        $res = invoke_mapped($pqrs, 'uno', ["idPqrs"=>$id]);
-        if (is_array($res) && isset($res["__error__"])) { http_response_code(500); echo json_encode(["success"=>false,"message"=>$res["__error__"]]); break; }
-        if ($res) { echo json_encode($res); }
-        else { http_response_code(404); echo json_encode(["message"=>"PQRS no encontrada"]); }
-        break;
+        header('Content-Type: application/json; charset=utf-8');
 
+        $id = filter_var(param('idPqrs', null), FILTER_VALIDATE_INT);
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(["error" => "Parámetro idPqrs inválido"], JSON_UNESCAPED_UNICODE);
+            break;
+        }
+
+        $res = $pqrs->uno($id);
+
+        // Si el modelo devolvió un error técnico en texto
+        if (is_string($res)) {
+            http_response_code(500);
+            echo json_encode(["error" => $res], JSON_UNESCAPED_UNICODE);
+            break;
+        }
+
+        if (is_array($res) && $res) {
+            echo json_encode($res, JSON_UNESCAPED_UNICODE);
+        } else {
+            http_response_code(404);
+            echo json_encode(["error" => "PQRS no encontrada"], JSON_UNESCAPED_UNICODE);
+        }
+        break;
+    
     // === INSERTAR
     case 'insertar':
         $p = collect_pqrs_payload();
@@ -294,7 +313,53 @@ switch ($op) {
             "idUsuario" => param('idUsuario')
         ]);
         echo json_encode(["result"=>$res]);
-        break;
+    break;
+
+    case 'actualizar_estado_cierre':
+        header('Content-Type: application/json; charset=utf-8');
+
+        $idPqrs   = filter_var(param('idPqrs', null), FILTER_VALIDATE_INT);
+        $idEstado = filter_var(param('idEstado', null), FILTER_VALIDATE_INT);
+
+        if (!$idPqrs || !$idEstado) {
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "Parámetros inválidos: idPqrs e idEstado son requeridos"
+            ]);
+            break;
+        }
+
+        try {
+            $res = $pqrs ->actualizarEstadoYFechaCierreCond($idPqrs, $idEstado);
+
+            if (is_string($res)) {
+                http_response_code(500);
+                echo json_encode([
+                    "success" => false,
+                    "message" => "No se pudo actualizar el estado y la fecha de cierre",
+                    "error"   => $res
+                ]);
+                break;
+            }
+
+            echo json_encode([
+                "success"       => true,
+                "message"       => $idEstado === 4
+                                    ? "Estado actualizado a CERRADO y fecha de cierre registrada."
+                                    : "Estado actualizado.",
+                "closed"        => $idEstado === 4,
+                "affected_rows" => (int)$res
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                "success" => false,
+                "message" => "Error inesperado",
+                "error"   => $e->getMessage()
+            ]);
+        }
+    break;
 
     default:
         http_response_code(400);

@@ -10,6 +10,11 @@ export const pqrsRoutes: Routes = [
                 loadComponent: () =>
                     import('./project/pqrs-list/pqrs-list').then((m) => m.PqrsList),
             },
-        ]
+            {
+                path: 'seguimiento/:id',
+                loadComponent: () =>
+                    import('./seguimiento-pqrs/seguimiento-pqrs').then((m) => m.SeguimientoPqrs),
+            }
+        ],
     }
 ];

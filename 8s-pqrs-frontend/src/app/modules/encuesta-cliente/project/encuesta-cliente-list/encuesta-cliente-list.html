@@ -1,7 +1,7 @@
-<div class="card card-w-title" style="display: flex; justify-content: space-between; align-items: center">
+<div *ngIf="mostrarMensaje" class="card card-w-title" style="display: flex; justify-content: space-between; align-items: center">
     <div style="display: flex; align-items: center">
         <i class="pi pi-star-fill"></i>
-        <span style="font-size: 15px; margin-left: 5px"><b>ENCUESTA</b></span>
+        <span style="font-size: 15px; margin-left: 5px"><b>{{mensaje}}</b></span>
     </div>
 </div>
 

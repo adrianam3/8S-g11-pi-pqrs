@@ -135,7 +135,7 @@ export class ApiService {
         } else {
             console.error('Error en API:', error);
             if (error.error && error.error.message) {
-                this.showToast('error', 'Error', error.error.message);
+                this.showToast('warn', 'Warning', error.error.message);
             } else {
                 this.showToast('error', 'Error', 'Ocurrió un error inesperado.');
             }

@@ -54,6 +54,8 @@ export class EncuestaClienteList implements OnInit {
     formEncuesta!: FormGroup;
     cargando = false;
     mostrarEncuesta: boolean = false;
+    mensaje: string = '';
+    mostrarMensaje: boolean = false;
 
     constructor(
         private fb: FormBuilder,
@@ -65,57 +67,59 @@ export class EncuestaClienteList implements OnInit {
         private router: Router,
     ) { }
 
-    // async ngOnInit(): Promise<void> {
-    //     this.idProgEncuesta = Number(this.route.snapshot.paramMap.get('id')) || 0;
 
-    //     if (this.idProgEncuesta > 0) {
-    //         const acepto = await this.mostrarConsentimiento();
-    //         if (acepto) {
-    //             await this.cargarDatos();
-    //         }
-    //     }
-        
-    // }
-async ngOnInit(): Promise<void> {
-  try {
-    // 1) Leer el segmento :id (puede ser número o token)
-    const raw = this.route.snapshot.paramMap.get('id') ?? '';
+    async ngOnInit(): Promise<void> {
+        try {
+            // 1) Leer el segmento :id (puede ser número o token)
+            const raw = this.route.snapshot.paramMap.get('id') ?? '';
 
-    // 2) Resolver a idProgEncuesta
-    this.idProgEncuesta = await this.resolverIdProgDesdeParam(raw);
+            // 2) Resolver a idProgEncuesta
+            this.idProgEncuesta = await this.resolverIdProgDesdeParam(raw);
 
-    if (this.idProgEncuesta > 0) {
-      const acepto = await this.mostrarConsentimiento();
-      if (acepto) {
-        await this.cargarDatos();
-      }
-    } else {
-      // Manejo cuando no se pudo resolver
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Enlace inválido',
-        detail: 'No se pudo determinar la encuesta. El enlace es inválido o ha expirado.',
-        life: 6000
-      });
+            if (this.idProgEncuesta > 0) {
+                const encuestaResp: any = await (
+                    await this.apiService.get<any[]>(`controllers/encuestasprogramadas.controller.php?op=uno&idProgEncuesta=${this.idProgEncuesta}`)
+                ).toPromise();
+                this.encuestaProgramada = encuestaResp;
+                if (this.encuestaProgramada) {
+                    if (this.encuestaProgramada.estado !== 0) {
+
+                        const acepto = await this.mostrarConsentimiento();
+                        if (acepto) {
+                            await this.cargarDatos();
+                        }
+                    } else {
+                        this.mensaje = 'La Encuesta ya ha sido respondida, gracias.';
+                        this.mostrarMensaje = true;
+                    }
+                }
+            } else {
+                // Manejo cuando no se pudo resolver
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Enlace inválido',
+                    detail: 'No se pudo determinar la encuesta. El enlace es inválido o ha expirado.',
+                    life: 6000
+                });
+            }
+        } catch (e: any) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: e?.message || 'No se pudo cargar la encuesta.',
+                life: 6000
+            });
+        }
     }
-  } catch (e: any) {
-    this.messageService.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: e?.message || 'No se pudo cargar la encuesta.',
-      life: 6000
-    });
-  }
-}
 
     async cargarDatos() {
         this.cargando = true;
         try {
             // Datos generales de la encuesta programada
-            const encuestaResp: any = await (
-                await this.apiService.get<any[]>(`controllers/encuestasprogramadas.controller.php?op=uno&idProgEncuesta=${this.idProgEncuesta}`)
-            ).toPromise();
-            this.encuestaProgramada = encuestaResp;
+            // const encuestaResp: any = await (
+            //     await this.apiService.get<any[]>(`controllers/encuestasprogramadas.controller.php?op=uno&idProgEncuesta=${this.idProgEncuesta}`)
+            // ).toPromise();
+            // this.encuestaProgramada = encuestaResp;
             this.idCanal = this.encuestaProgramada.idCanal;
 
             const resp$ = await this.apiService.get<any[]>(`controllers/categoriasPqrs.controller.php?op=todos&idCanal=${encodeURIComponent(String(this.idCanal))}`);
@@ -274,7 +278,7 @@ async ngOnInit(): Promise<void> {
 
         const comCtrl = g.get('comentario') as FormControl;
         if (requiereComentario) {
-            comCtrl.setValidators([Validators.required, Validators.maxLength(1000)]);
+            comCtrl.setValidators([Validators.required, Validators.maxLength(10000)]);
         } else {
             comCtrl.clearValidators();
             comCtrl.setValue('');
@@ -561,6 +565,9 @@ async ngOnInit(): Promise<void> {
 
             if (resp?.success) {
                 this.messageService.add({ severity: 'success', summary: 'Enviado', detail: resp.message || '¡Encuesta enviada correctamente!' });
+                this.mensaje = 'Gracias!';
+                this.mostrarMensaje = true;
+                this.mostrarEncuesta = false;
                 // opcional: this.formEncuesta.disable(); this.mostrarEncuesta = false; this.router.navigate(['/home']);
             } else {
                 this.messageService.add({ severity: 'warn', summary: 'Atención', detail: resp?.message || 'No se pudo guardar la encuesta' });
@@ -568,6 +575,41 @@ async ngOnInit(): Promise<void> {
                     console.warn('Errores por respuesta:', resp.errores);
                 }
             }
+
+            // 2) Si alguna respuesta generaPqr = 1, invocar generar_pqrs
+            let detalle = resp?.message || '¡Encuesta enviada correctamente!';
+            if (this.debeGenerarPqrs()) {
+                try {
+                    const genResp = await (
+                        await this.apiService.get<any>(`controllers/encuestasprogramadas.controller.php?op=generar_pqrs&idProgEncuesta=${encodeURIComponent(String(this.idProgEncuesta))}`)
+                    ).toPromise();
+
+                    if (genResp?.success) {
+                        if (genResp?.idPqrs) {
+                            detalle = `Encuesta enviada. Se generó el PQR #${genResp.idPqrs}.`;
+                        } else {
+                            detalle = `Encuesta enviada. Se generó un PQR.`;
+                        }
+                    } else {
+                        // No bloqueamos el éxito del guardado; informamos el problema al generar PQR
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary: 'PQR',
+                            detail: genResp?.message || 'No se pudo generar el PQR desde las respuestas.'
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error generando PQR:', e);
+                    this.messageService.add({
+                        severity: 'warn',
+                        summary: 'PQR',
+                        detail: 'Respuestas guardadas, pero no se pudo generar el PQR.'
+                    });
+                }
+            }
+
+            // 3) Mensaje de éxito final (con posible idPqrs)
+            this.messageService.add({ severity: 'success', summary: 'Enviado', detail: detalle });
         } catch (error) {
             console.error(error);
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al guardar la encuesta' });
@@ -580,30 +622,30 @@ async ngOnInit(): Promise<void> {
         return respuestas.some(r => Number(r?.generaPqr) === 1);
     }
 
-//am -26092025
-/** 
- * Si "raw" es un número válido, lo devuelve.
- * Si es un token, llama al backend para traducirlo a idProgEncuesta.
- */
-private async resolverIdProgDesdeParam(raw: string): Promise<number> {
-  const maybeNum = Number(raw);
-  if (Number.isFinite(maybeNum) && maybeNum > 0) {
-    return maybeNum; // era un id normal, como /enc/50
-  }
+    //am -26092025
+    /** 
+     * Si "raw" es un número válido, lo devuelve.
+     * Si es un token, llama al backend para traducirlo a idProgEncuesta.
+     */
+    private async resolverIdProgDesdeParam(raw: string): Promise<number> {
+        const maybeNum = Number(raw);
+        if (Number.isFinite(maybeNum) && maybeNum > 0) {
+            return maybeNum; // era un id normal, como /enc/50
+        }
 
-  // era un token → pedir al backend que lo resuelva
-  try {
-    const resp: any = await lastValueFrom(
-      this.apiService.get(`/controllers/atenciones.controller.php?op=resolver_token&t=${encodeURIComponent(raw)}`)
-    );
-    if (resp?.success && resp?.idProgEncuesta) {
-      return Number(resp.idProgEncuesta);
+        // era un token → pedir al backend que lo resuelva
+        try {
+            const resp: any = await lastValueFrom(
+                this.apiService.get(`/controllers/atenciones.controller.php?op=resolver_token&t=${encodeURIComponent(raw)}`)
+            );
+            if (resp?.success && resp?.idProgEncuesta) {
+                return Number(resp.idProgEncuesta);
+            }
+        } catch (err) {
+            // opcional: log o toast
+        }
+        return 0;
     }
-  } catch (err) {
-    // opcional: log o toast
-  }
-  return 0;
-}
 
 
 

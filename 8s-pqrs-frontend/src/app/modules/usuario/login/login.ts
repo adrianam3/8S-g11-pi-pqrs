@@ -59,6 +59,22 @@ export class Login implements OnInit {
         this.showPassword = !this.showPassword;
     }
 
+    login2() {
+        this.loading = true;
+        localStorage.setItem('idUsuario', '2');
+        localStorage.setItem('idRol', '2');
+        localStorage.setItem('email', 'adrian.merlo.am3+20@gmail.com');
+        localStorage.setItem('nombres', 'Xavier');
+        localStorage.setItem('apellidos', 'Cangas');
+
+        this.showToast('success', 'Inicio de sesión exitoso', 'Bienvenido');
+        const delayMs = 1000; // 1s de espera 
+        setTimeout(() => {
+            this.loading = false;
+            this.router.navigate(['/home']);
+        }, delayMs);
+    }
+
     login() {
 
         const formData = {

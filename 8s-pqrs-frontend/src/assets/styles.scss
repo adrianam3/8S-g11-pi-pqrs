@@ -3,3 +3,5 @@
 @use './layout/layout.scss';
 @use 'primeicons/primeicons.css';
 @use './demo/demo.scss';
+@import 'quill/dist/quill.core.css';
+@import 'quill/dist/quill.snow.css';

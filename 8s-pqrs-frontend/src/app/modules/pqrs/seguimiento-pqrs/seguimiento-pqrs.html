@@ -1,0 +1,303 @@
+<!-- Toolbar superior -->
+<p-toolbar class="mb-3">
+    <div class="p-toolbar-group-left flex align-items-center gap-2">
+        <i class="pi pi-ticket"></i>
+        <span><b>Detalle de PQR # {{ pqr?.idPqrs }}</b></span>
+    </div>
+    <div class="p-toolbar-group-right flex gap-2">
+        <p-button label="Volver" icon="pi pi-arrow-left" (click)="onBack()"></p-button>
+        <p-button label="Imprimir" icon="pi pi-print" severity="secondary" (click)="onPrint()"></p-button>
+    </div>
+</p-toolbar>
+
+<!-- Resumen de estado -->
+<p-card class="mb-3">
+    <div class="flex flex-wrap gap-2 align-items-center">
+        <span class="text-600">Estado:</span>
+        <p-tag [value]="pqr?.nombreEstado || '—'" [severity]="
+        (pqr?.nombreEstado || '').toLowerCase().includes('abierto') ? 'warning' :
+        (pqr?.nombreEstado || '').toLowerCase().includes('cerr')   ? 'success' :
+        (pqr?.nombreEstado || '').toLowerCase().includes('escala') ? 'danger'  :
+        'info'
+      ">
+        </p-tag>
+
+        <span class="text-600 ml-3">Programa de Encuesta:</span>
+        <p-tag [value]="pqr?.estadoProgEncuesta || '—'" severity="info">
+        </p-tag>
+
+        <span class="text-600 ml-3">ID Atención:</span>
+        <p-tag [value]="(pqr?.idAtencion || '—') + ''" severity="secondary"></p-tag>
+    </div>
+</p-card>
+
+<div class="flex flex-col md:flex-row gap-8 mt-8">
+    <div class="md:w-1/2">
+        <p-card header="Cliente" class="mb-3">
+            <div class="grid grid-cols-12 gap-4">
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Nombre:</label>
+                    <div class="display-input">{{ pqr?.nombreCliente || '—' }}</div>
+                </div>
+
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Cédula:</label>
+                    <div class="display-input">{{ pqr?.cedula || '—' }}</div>
+                </div>
+
+                <!-- Fila 2 -->
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Email:</label>
+                    <div class="display-input">
+                        <ng-container *ngIf="pqr?.emailCliente; else sinCorreo">
+                            <a [href]="'mailto:' + pqr?.emailCliente" class="no-underline text-900">{{ pqr?.emailCliente
+                                }}</a>
+                        </ng-container>
+                        <ng-template #sinCorreo>—</ng-template>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">ID Cliente:</label>
+                    <div class="display-input">{{ pqr?.idCliente || '—' }}</div>
+                </div>
+
+                <!-- Si tienes dirección u otros campos, colócalos como "textarea" de solo lectura -->
+                <div class="flex items-center gap-2 col-span-6" *ngIf="pqr?.direccion || pqr?.direccion === ''">
+                    <label class="block text-600 mb-2">Dirección:</label>
+                    <div class="display-textarea">
+                        {{ pqr?.direccion || '—' }}
+                    </div>
+                </div>
+
+                <!-- Ejemplos opcionales (añade/quita según tu modelo) -->
+                <div class="flex items-center gap-2 col-span-6" *ngIf="pqr?.telefono || pqr?.telefono === ''">
+                    <label class="block text-600 mb-2">Teléfono:</label>
+                    <div class="display-input">{{ pqr?.telefono || '—' }}</div>
+                </div>
+
+                <div class="flex items-center gap-2 col-span-6" *ngIf="pqr?.ciudad || pqr?.ciudad === ''">
+                    <label class="block text-600 mb-2">Ciudad:</label>
+                    <div class="display-input">{{ pqr?.ciudad || '—' }}</div>
+                </div>
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Agencia:</label>
+                    <div class="display-input">{{ pqr?.nombreAgencia || '—' }}</div>
+                </div>
+            </div>
+        </p-card>
+
+    </div>
+    <div class="md:w-1/2">
+        <p-card header="Datos del PQR" class="mb-3">
+            <div class="grid grid-cols-12 gap-4">
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Tipo:</label>
+                    <div class="display-input">{{ pqr?.nombreTipo || '—' }}</div>
+                </div>
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Categoría:</label>
+                    <div class="display-input">{{ pqr?.nombreCategoria || '—' }}</div>
+                </div>
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Canal:</label>
+                    <div class="display-input">{{ pqr?.nombreCanal || '—' }}</div>
+                </div>
+                <div class="flex items-center gap-2 col-span-6">
+                    <label class="block text-600 mb-2">Código:</label>
+                    <div class="display-input">{{ pqr?.codigo || '—' }}</div>
+                </div>
+
+                <div class="flex items-center gap-2 col-span-12">
+                    <label class="block text-600 mb-2">Encuesta:</label>
+                    <div class="display-input">{{ pqr?.nombreEncuesta ?? '—' }}</div>
+                </div>
+
+                <div class="flex items-center gap-2 col-span-12">
+                    <label class="block text-600 mb-2">Asunto:</label>
+                    <div class="display-input">{{ pqr?.asunto ?? '—' }}</div>
+                </div>
+            </div>
+        </p-card>
+    </div>
+</div>
+
+<div class="flex flex-col md:flex-row gap-8 mt-8">
+    <div class="md:w-1/2">
+        <p-accordion value="1">
+            <p-accordion-panel value="0">
+                <p-accordion-header>Asunto</p-accordion-header>
+                <p-accordion-content>
+                    <div class="field" *ngIf="pqr?.asunto">
+                        <div class="text-900 font-medium">{{ pqr?.asunto }}</div>
+                    </div>
+
+                    <div class="field" *ngIf="pqr?.detalle">
+                        <label class="text-600">Detalle</label>
+                        <div class="text-900" [innerHTML]="pqr?.detalle"></div>
+                    </div>
+                </p-accordion-content>
+            </p-accordion-panel>
+        </p-accordion>
+    </div>
+    <div class="md:w-1/2" *ngIf="idRol !== '1' ">
+        <p-card class="mb-3" header="Acciones">
+            <div class="flex flex-wrap gap-2">
+                <p-button *ngIf="pqr?.idEstado === 1" label="Iniciar Seguimiento" icon="pi pi-play-circle"
+                    severity="success" (click)="confirmarInicioSeguimiento(pqr)"></p-button>
+                <div class="flex justify-content-end mb-2">
+                    <p-button label="Escalar" icon="pi pi-arrow-up-right" (click)="abrirEscalar()"
+                        [disabled]="!canEscalar" severity="danger" pTooltip="Asignar responsable y escalar el PQR">
+                    </p-button>
+                </div>
+                <p-button *ngIf="pqr?.idEstado === 4" label="Abrir PQRS" icon="pi pi-check-circle" severity="success"
+                    (click)="confirmarAbrir(pqr, 1)"></p-button>
+                <p-button label="Cerrar PQRS" icon="pi pi-check-circle" severity="success"
+                    (click)="confirmarCerrar(pqr, 4)"></p-button>
+                <p-button label="Nuevo seguimiento" icon="pi pi-plus" severity="info" [disabled]="!canSeguimiento"
+                    (click)="abrirDialogSeguimiento()"> </p-button>
+            </div>
+        </p-card>
+    </div>
+</div>
+
+<div class="flex flex-col md:flex-row gap-8 mt-8">
+    <div class="md:w-full">
+        <p-card header="Seguimiento" class="mb-3">
+            <ng-container *ngIf="!loadingSeg && seguimientos?.length === 0">
+                <div class="text-600">No hay registros de seguimiento para este PQR.</div>
+            </ng-container>
+
+            <ng-container *ngIf="loadingSeg">
+                <div class="flex align-items-center gap-2">
+                    <p-progressSpinner styleClass="w-2rem h-2rem"></p-progressSpinner>
+                    <span class="text-600">Cargando seguimiento...</span>
+                </div>
+            </ng-container>
+
+            <ng-container *ngIf="!loadingSeg && seguimientos?.length">
+                <!-- Panel con scroll -->
+                <p-scrollPanel [style]="{ height: '420px' }" styleClass="w-full">
+                    <p-timeline [value]="seguimientos" align="alternate" class="w-full">
+                        <!-- Punto del timeline: avatar con color por usuario -->
+                        <ng-template pTemplate="marker" let-seg>
+                            <p-avatar [label]="getInicial(seg?.usuarioLogin)" shape="circle"
+                                [style]="getAvatarStyle(seg?.usuarioLogin)">
+                            </p-avatar>
+                        </ng-template>
+
+                        <!-- Contenido -->
+                        <ng-template pTemplate="content" let-seg>
+                            <div class="surface-ground p-3 border-round-md"
+                                [style.borderLeft]="'4px solid ' + getUserColor(seg?.usuarioLogin)">
+                                <div class="flex justify-content-between align-items-center mb-2">
+                                    <div class="flex align-items-center gap-2">
+                                        <!-- Etiqueta/usuario con color -->
+                                        <span class="text-900 font-medium"
+                                            [style.color]="getUserColor(seg?.usuarioLogin)">
+                                            {{ seg?.usuarioLogin || '—' }}
+                                        </span>
+                                    </div>
+                                    <small class="text-600">
+                                        {{ seg?.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}
+                                    </small>
+                                </div>
+
+                                <div class="text-900" *ngIf="seg?.comentario">
+                                    <div class="bubble" (click)="onBubbleClick($event)"
+                                        [innerHTML]="sanitizeAndDownscale(seg.comentario)"></div>
+                                </div>
+                            </div>
+                        </ng-template>
+                    </p-timeline>
+                </p-scrollPanel>
+            </ng-container>
+        </p-card>
+    </div>
+</div>
+
+<!-- Diálogo -->
+<p-dialog header="Nuevo seguimiento" [(visible)]="dialogSeguimientoVisible" [modal]="true" [closable]="false"
+    [draggable]="false" [resizable]="false" [style]="{ width: '720px', maxWidth: '95vw' }"
+    [breakpoints]="{ '960px': '95vw', '640px': '98vw' }">
+    <!-- Contenido: tu formulario (SIN cambios de estructura) -->
+    <form [formGroup]="formSeguimiento" (ngSubmit)="confirmarGuardar()">
+        <div class="grid formgrid">
+            <div class="col-12">
+                <label class="block mb-1">
+                    Comentario <span class="text-red-500">*</span>
+                </label>
+
+                <quill-editor formControlName="comentario" theme="snow" [modules]="quillModules"
+                    placeholder="Escribe tu actualización, puedes pegar imágenes desde el portapapeles…"
+                    style="height: 200px">
+                </quill-editor>
+
+                <small class="p-error"
+                    *ngIf="formSeguimiento.get('comentario')?.touched && formSeguimiento.get('comentario')?.hasError('required')">
+                    El comentario es obligatorio.
+                </small>
+            </div>
+        </div>
+
+        <!-- Footer del diálogo -->
+        <div class="flex justify-content-end gap-2 mt-3">
+            <p-button label="Cancelar" icon="pi pi-times" severity="secondary" (click)="confirmarCancelar()">
+            </p-button>
+
+            <p-button label="Agregar" icon="pi pi-send" type="submit" [disabled]="formSeguimiento.invalid || savingSeg"
+                [loading]="savingSeg">
+            </p-button>
+        </div>
+    </form>
+</p-dialog>
+
+<p-dialog [(visible)]="previewVisible" [modal]="true" header="Imagen">
+    <img *ngIf="previewSrc" [src]="previewSrc" style="max-width:90vw;max-height:80vh;display:block;">
+</p-dialog>
+<!-- Diálogo de selección de responsable -->
+<p-dialog header="Asignar Responsable" [(visible)]="dialogEscalarVisible" [modal]="true" [closable]="false"
+    [draggable]="false" [resizable]="false" [style]="{ width: '520px', maxWidth: '95vw', height: '45vh' }"
+    [contentStyle]="{ 'overflow': 'visible' }">
+    <!-- Contenedor con scroll interno -->
+    <div style="max-height: 40vh; overflow: auto; padding-right: .25rem;">
+        <div class="mb-3 text-700" *ngIf="pqr">
+            <div *ngIf="!esAsignacion">
+                <h5>Escalar Requerimiento</h5>
+            </div>
+            <div><b>PQRS:</b> {{ pqr.idPqrs }} — <span>{{ pqr.asunto }}</span></div>
+            <div><b>Estado actual:</b> {{ pqr.nombreEstado || '—' }}</div>
+        </div>
+
+        <div class="mb-2">
+            <label class="block mb-1">Responsable</label>
+            <p-select [options]="responsablesOptions" optionLabel="label" optionValue="value"
+                placeholder="Seleccione un responsable" [showClear]="true" [(ngModel)]="responsableSeleccionado"
+                [ngModelOptions]="{ standalone: true }" [appendTo]="'body'" [panelStyle]="{ 'max-height': '260px' }"
+                class="w-full">
+            </p-select>
+
+            <small class="p-error" *ngIf="intentoEscalar && !responsableSeleccionado">
+                Debe seleccionar un responsable.
+            </small>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <ng-template pTemplate="footer">
+
+        <p-button label="Cancelar" *ngIf="!esAsignacion" icon="pi pi-times" severity="secondary"
+            (click)="confirmarCancelarEscalado()">
+        </p-button>
+        <p-button label="Escalar" *ngIf="!esAsignacion" icon="pi pi-send" [loading]="savingEscalar"
+            (click)="confirmarEscalar()" [disabled]="savingEscalar">
+        </p-button>
+
+        <p-button label="Guardar Responsable" *ngIf="esAsignacion" icon="pi pi-send" [loading]="savingEscalar"
+            (click)="confirmarEscalar()" [disabled]="savingEscalar">
+        </p-button>
+
+    </ng-template>
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>

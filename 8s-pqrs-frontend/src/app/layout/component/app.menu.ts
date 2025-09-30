@@ -63,31 +63,31 @@ export class AppMenu {
                         icon: 'pi pi-fw pi-file-check',
                         routerLink: ['/tipo-pqrs']
                     },
-                    {
-                        label: 'Registrar PQRS',
-                        icon: 'pi pi-fw pi-plus',
-                        routerLink: ['/registrarPqrs']
-                    },
-                    {
-                        label: 'Clasificar PQRS',
-                        icon: 'pi pi-fw pi-filter',
-                        routerLink: ['/clasificarPqrs']
-                    },
-                    {
-                        label: 'Asignar PQRS',
-                        icon: 'pi pi-fw pi-check',
-                        routerLink: ['/asignarPqrs']
-                    },
+                    // {
+                    //     label: 'Registrar PQRS',
+                    //     icon: 'pi pi-fw pi-plus',
+                    //     routerLink: ['/registrarPqrs']
+                    // },
+                    // {
+                    //     label: 'Clasificar PQRS',
+                    //     icon: 'pi pi-fw pi-filter',
+                    //     routerLink: ['/clasificarPqrs']
+                    // },
+                    // {
+                    //     label: 'Asignar PQRS',
+                    //     icon: 'pi pi-fw pi-check',
+                    //     routerLink: ['/asignarPqrs']
+                    // },
                     {
                         label: 'PQRS',
                         icon: 'pi pi-fw pi-list',
                         routerLink: ['/pqrs']
                     },
-                    {
-                        label: 'Seguimiento y Cierre',
-                        icon: 'pi pi-fw pi-check-circle',
-                        routerLink: ['/seguimiento']
-                    },
+                    // {
+                    //     label: 'Seguimiento y Cierre',
+                    //     icon: 'pi pi-fw pi-check-circle',
+                    //     routerLink: ['/seguimiento']
+                    // },
                     {
                         label: 'Canales',
                         icon: 'pi pi-fw pi-check-circle',

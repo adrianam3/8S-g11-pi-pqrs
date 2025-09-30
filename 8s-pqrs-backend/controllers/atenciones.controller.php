@@ -408,8 +408,8 @@ switch ($_GET["op"] ?? '') {
 
                     $payload['emailStatus'] = ($mailRes === 'ok') ? 'sent' : ('error: ' . $mailRes);
                     if ($mailRes !== 'ok') {
-    error_log('EMAIL_SEND_ERROR: ' . $mailRes);
-}
+                    error_log('EMAIL_SEND_ERROR: ' . $mailRes);
+                      }
 
                 } else {
                     $payload['emailStatus'] = 'skip: email inválido o vacío';

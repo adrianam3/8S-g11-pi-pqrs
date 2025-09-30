@@ -467,4 +467,58 @@ class Pqrs
             else { $err = $stmt->error; $stmt->close(); $con->close(); return $err; }
         } catch (Exception $e) { http_response_code(500); return $e->getMessage(); }
     }
+
+    /**
+     * Actualiza idEstado y fechaCierre condicionalmente:
+     * - Si idEstado = 4 (CERRADO): fechaCierre = NOW()
+     * - En caso contrario: fechaCierre = NULL
+     *
+     * @param int $idPqrs
+     * @param int $idEstado
+     * @return int|string  Número de filas afectadas o string con error
+     */
+    public function actualizarEstadoYFechaCierreCond(int $idPqrs, int $idEstado) {
+        try {
+            $conObj = new ClaseConectar();
+            $con = $conObj->ProcedimientoParaConectar();
+
+            if ($idEstado === 4) {
+                $sql = "UPDATE pqrs
+                        SET idEstado = ?,
+                            fechaCierre = NOW()
+                        WHERE idPqrs = ?";
+            } else {
+                $sql = "UPDATE pqrs
+                        SET idEstado = ?,
+                            fechaCierre = NULL
+                        WHERE idPqrs = ?";
+            }
+
+            $stmt = $con->prepare($sql);
+            if (!$stmt) {
+                $err = 'Error al preparar la consulta: ' . $con->error;
+                $con->close();
+                return $err;
+            }
+
+            $stmt->bind_param('ii', $idEstado, $idPqrs);
+
+            if (!$stmt->execute()) {
+                $err = $stmt->error ?: 'No se pudo ejecutar la actualización';
+                $stmt->close();
+                $con->close();
+                return $err;
+            }
+
+            $afectadas = $stmt->affected_rows; // puede ser 0 si no hay cambios
+            $stmt->close();
+            $con->close();
+
+            return $afectadas;
+        } catch (Throwable $e) {
+            http_response_code(500);
+            return $e->getMessage();
+        }
+    }
+
 }

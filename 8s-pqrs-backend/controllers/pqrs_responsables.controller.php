@@ -161,6 +161,102 @@ switch ($_GET["op"] ?? '') {
         echo json_encode(["total" => is_numeric($total) ? (int)$total : 0]);
         break;
 
+    case 'responsable_activo_pqrs':
+    header('Content-Type: application/json; charset=utf-8');
+
+        $idPqrs = filter_var(param('idPqrs', null), FILTER_VALIDATE_INT);
+        if (!$idPqrs) {
+            http_response_code(400);
+            echo json_encode(["success"=>false, "message"=>"Parámetro idPqrs inválido"]);
+            break;
+        }
+
+        $res = $model->activoPorPqrs($idPqrs);
+
+        if (is_array($res) && isset($res["__error__"])) {
+            http_response_code(500);
+            echo json_encode(["success"=>false, "message"=>$res["__error__"]]);
+            break;
+        }
+
+        if ($res) {
+            echo json_encode(["success"=>true, "data"=>$res]);
+        } else {
+            http_response_code(404);
+            echo json_encode(["success"=>false, "message"=>"No hay responsable activo para este PQR"]);
+        }
+    break;
+
+    case 'responsables_por_pqrs':
+        header('Content-Type: application/json; charset=utf-8');
+
+        $idPqrs = filter_var(param('idPqrs', null), FILTER_VALIDATE_INT);
+        $soloInactivos = filter_var(param('soloInactivos', null), FILTER_VALIDATE_INT);
+        if (!$idPqrs) {
+            http_response_code(400);
+            echo json_encode(["success"=>false, "message"=>"Parámetro idPqrs inválido"]);
+            break;
+        }
+
+        $res = $model->responsablesPorPqrs($idPqrs, $soloInactivos);
+
+        if (is_array($res) && isset($res["__error__"])) {
+            http_response_code(500);
+            echo json_encode(["success"=>false, "message"=>$res["__error__"]]);
+            break;
+        }
+
+        // Devolver lista (vacía o con registros)
+        echo json_encode(["success"=>true, "data"=>$res]);
+    break;
+
+    case 'asignar_responsable':
+        header('Content-Type: application/json; charset=utf-8');
+
+        $idPqrs        = filter_var(param('idPqrs', null), FILTER_VALIDATE_INT);
+        $idResponsable = filter_var(param('idResponsable', null), FILTER_VALIDATE_INT);
+
+        if (!$idPqrs || !$idResponsable) {
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "Parámetros inválidos: idPqrs e idResponsable son requeridos"
+            ]);
+            break;
+        }
+
+        try {
+            $res = $model->asignarResponsableAtomic($idPqrs, $idResponsable);
+
+            if (is_string($res)) {
+                // El model devolvió mensaje de error
+                http_response_code(500);
+                echo json_encode([
+                    "success" => false,
+                    "message" => "No se pudo asignar el responsable",
+                    "error"   => $res
+                ]);
+                break;
+            }
+
+            // Éxito
+            echo json_encode([
+                "success"          => true,
+                "message"          => "Responsable asignado correctamente",
+                "activated_rows"   => $res["activated_rows"] ?? 0,
+                "deactivated_rows" => $res["deactivated_rows"] ?? 0
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                "success" => false,
+                "message" => "Error inesperado",
+                "error"   => $e->getMessage()
+            ]);
+        }
+    break;
+
+
     default:
         http_response_code(400);
         echo json_encode(["message" => "Operación no soportada. Usa op=todos|uno|obtenerPorCompuesto|insertar|upsert|actualizar|eliminar|eliminarPorCompuesto|contar"]);

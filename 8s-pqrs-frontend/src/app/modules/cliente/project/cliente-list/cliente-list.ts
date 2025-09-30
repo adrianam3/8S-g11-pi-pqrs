@@ -22,7 +22,7 @@ export class ClienteList {
     tabs = [
         { title: 'Atenciones', value: 0, icon: 'pi pi-list' },
         { title: 'Encuestas programadas', value: 1, icon: 'pi pi-list' },
-        { title: 'Tab 3', value: 2, icon: 'pi pi-list' },
+        // { title: 'Tab 3', value: 2, icon: 'pi pi-list' },
     ];
 
 }
